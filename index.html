@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Nomad Network</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="no-edit">
+  <div id="toolbar">
+    <div id="brand">
+      <strong>NOMAD NETWORK</strong>
+      <span>Parking Intelligence Map</span>
+    </div>
+
+    <label id="addWrap" style="display:none"><input type="checkbox" id="addMode"> Add</label>
+    <label id="editWrap" style="display:none"><input type="checkbox" id="editMode"> Edit</label>
+
+    <button id="unlockBtn" type="button">Unlock</button>
+    <button id="lockBtn" type="button" style="display:none">Lock</button>
+    <span id="hint">Sign in required</span>
+
+    <div id="settings">
+      <button id="settingsBtn" type="button">⚙ Settings</button>
+      <div id="settingsMenu">
+        <button id="menuExport" type="button">Export parking lots</button>
+        <button id="menuImport" type="button">Import JSON to Firebase</button>
+        <button id="menuStats" type="button">Statistics</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gate">
+    <div class="gate-card">
+      <h2>Nomad Network</h2>
+      <p>Sign in with an approved Google account to view the parking map.</p>
+      <button id="btnGoogle" class="btn primary" type="button">Sign in with Google</button>
+      <div id="gateMsg" class="muted" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="legend" id="legend">
+    <div class="legend-row"><span class="legend-swatch" style="background:var(--public)"></span><span>Public Parking</span></div>
+    <div class="legend-row"><span class="legend-swatch" style="background:var(--hidden)"></span><span>Hidden Parking</span></div>
+  </div>
+
+  <div id="status">Loading…</div>
+  <div id="version"></div>
+
+  <div id="unlockModal" class="modal">
+    <div class="card">
+      <header>Unlock Editing</header>
+      <main>
+        <label class="row">
+          <span>Password</span>
+          <input id="pwInput" type="password" placeholder="Enter editor password" autocomplete="current-password" />
+        </label>
+        <label style="display:flex;gap:8px;align-items:center"><input id="rememberPw" type="checkbox"> Remember this session</label>
+        <div class="muted">Viewing is controlled by Google sign-in. Editing also requires this local password and Firestore write permission.</div>
+      </main>
+      <footer>
+        <button id="pwCancel" class="btn" type="button">Cancel</button>
+        <button id="pwSubmit" class="btn primary" type="button">Unlock</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="parkingModal" class="modal">
+    <div class="card">
+      <header id="modalTitle">Add Parking Lot</header>
+      <main>
+        <label class="row"><span>Name</span><input id="fName" type="text" placeholder="Example: Legion Square Parking"></label>
+        <label class="row"><span>Type</span>
+          <select id="fType">
+            <option value="public">Public Parking</option>
+            <option value="hidden">Hidden Parking</option>
+          </select>
+        </label>
+        <label class="row"><span>Notes</span><textarea id="fNotes" placeholder="Access notes, landmarks, risk, entry points, etc."></textarea></label>
+        <label class="row"><span>Last Checked</span><input id="fLastChecked" type="date"></label>
+        <div class="muted" id="coordNote">Coords will appear here.</div>
+      </main>
+      <footer>
+        <button id="btnCancel" class="btn" type="button">Cancel</button>
+        <button id="btnSave" class="btn primary" type="button">Save</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="statsModal" class="modal">
+    <div class="card">
+      <header>Statistics</header>
+      <main id="statsBody"></main>
+      <footer><button id="statsClose" class="btn primary" type="button">Close</button></footer>
+    </div>
+  </div>
+
+  <input id="importFile" type="file" accept="application/json,.json" style="display:none" />
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, getDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const VERSION = "beta 1.0.0";
+    const COLLECTION = "nomad_parking";
+    const EDIT_PASSWORD = "NOMAD";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcfOML9FD1Q5vcoCb3NdIlFKtx3LAovBc",
+      authDomain: "dynasty8-property-map.firebaseapp.com",
+      projectId: "dynasty8-property-map",
+      storageBucket: "dynasty8-property-map.firebasestorage.app",
+      messagingSenderId: "849316207524",
+      appId: "1:849316207524:web:9c921ad842fc188d027f31",
+      measurementId: "G-VXG629H337"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    const parkingCol = collection(db, COLLECTION);
+
+    const $ = (id) => document.getElementById(id);
+    const mapEl = $("map"), gate = $("gate"), gateMsg = $("gateMsg"), statusEl = $("status"), hintEl = $("hint");
+    const addModeEl = $("addMode"), editModeEl = $("editMode");
+    const unlockBtn = $("unlockBtn"), lockBtn = $("lockBtn"), addWrap = $("addWrap"), editWrap = $("editWrap");
+    const settingsBtn = $("settingsBtn"), settingsMenu = $("settingsMenu"), menuExport = $("menuExport"), menuImport = $("menuImport"), menuStats = $("menuStats");
+    const parkingModal = $("parkingModal"), modalTitle = $("modalTitle"), fName = $("fName"), fType = $("fType"), fNotes = $("fNotes"), fLastChecked = $("fLastChecked"), coordNote = $("coordNote");
+    const unlockModal = $("unlockModal"), pwInput = $("pwInput"), rememberPw = $("rememberPw");
+    const statsModal = $("statsModal"), statsBody = $("statsBody"), importFile = $("importFile");
+    $("version").textContent = VERSION;
+
+    let map, imageBounds, booted = false, unlocked = false, pendingLatLng = null, editingId = null;
+    const groups = { public: L.layerGroup(), hidden: L.layerGroup() };
+    const records = new Map();
+
+    function today(){ return new Date().toISOString().slice(0,10); }
+    function setHint(text){ hintEl.textContent = text; }
+    function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function iconFor(type){
+      const cls = type === "hidden" ? "marker-hidden" : "marker-public";
+      const glyph = type === "hidden" ? "◆" : "P";
+      return L.divIcon({ className:"", html:`<div class="marker-dot ${cls}">${glyph}</div>`, iconSize:[24,24], iconAnchor:[12,12], tooltipAnchor:[0,-14] });
+    }
+    function typeLabel(type){ return type === "hidden" ? "Hidden Parking" : "Public Parking"; }
+    function layerFor(type){ return type === "hidden" ? groups.hidden : groups.public; }
+
+    function popupHtml(entry){
+      const type = entry.type === "hidden" ? "hidden" : "public";
+      return `<div class="popup">
+        <h3>${esc(entry.name || "Parking Lot")}</h3>
+        <p><span class="pill ${type}">${typeLabel(type)}</span></p>
+        ${entry.notes ? `<p>${esc(entry.notes).replace(/\n/g,"<br>")}</p>` : ""}
+        <p><strong>Last checked:</strong> ${esc(entry.lastChecked || "—")}</p>
+        <small>Coords: x=${Number(entry.x).toFixed(1)}, y=${Number(entry.y).toFixed(1)}</small>
+        <div class="popup-actions">
+          <button class="btn" data-action="edit" data-id="${entry.id}">Edit</button>
+          <button class="btn danger" data-action="delete" data-id="${entry.id}">Delete</button>
+        </div>
+      </div>`;
+    }
+
+    function upsertMarker(entry){
+      const cleanType = entry.type === "hidden" ? "hidden" : "public";
+      entry.type = cleanType;
+      let rec = records.get(entry.id);
+      if (!rec){
+        const marker = L.marker([entry.y, entry.x], {
+          icon: iconFor(cleanType), draggable: unlocked && editModeEl.checked,
+          autoPan:false, keyboard:false, bubblingMouseEvents:false
+        }).bindTooltip(entry.name || "Parking Lot", { direction:"top", offset:[0,-12] });
+        rec = { ...entry, _marker: marker };
+        records.set(entry.id, rec);
+        layerFor(cleanType).addLayer(marker);
+        marker.on("dragend", async (e) => {
+          if (!(unlocked && editModeEl.checked)) return;
+          const p = e.target.getLatLng();
+          await updateDoc(doc(db, COLLECTION, rec.id), { x:p.lng, y:p.lat, updatedAt:serverTimestamp() });
+        });
+      } else {
+        const oldType = rec.type;
+        Object.assign(rec, entry);
+        if (oldType !== cleanType){ layerFor(oldType).removeLayer(rec._marker); layerFor(cleanType).addLayer(rec._marker); }
+        rec._marker.setLatLng([rec.y, rec.x]);
+        rec._marker.setIcon(iconFor(cleanType));
+        rec._marker.setTooltipContent(rec.name || "Parking Lot");
+      }
+      rec._marker.bindPopup(popupHtml(rec));
+      rec._marker.off("popupopen").on("popupopen", (ev) => {
+        const root = ev.popup.getElement();
+        const edit = root.querySelector('[data-action="edit"]');
+        const del = root.querySelector('[data-action="delete"]');
+        edit?.addEventListener("click", () => {
+          if (!(unlocked && editModeEl.checked)) return alert("Turn on Edit mode first.");
+          openEdit(rec);
+        });
+        del?.addEventListener("click", async () => {
+          if (!(unlocked && editModeEl.checked)) return alert("Turn on Edit mode first.");
+          if (!confirm("Delete this parking lot?")) return;
+          await deleteDoc(doc(db, COLLECTION, rec.id));
+        });
+      });
+      applyEditMode();
+    }
+
+    function removeMarker(id){
+      const rec = records.get(id);
+      if (!rec) return;
+      layerFor(rec.type).removeLayer(rec._marker);
+      records.delete(id);
+    }
+
+    function applyEditMode(){
+      const canEdit = unlocked && editModeEl.checked;
+      document.body.classList.toggle("no-edit", !canEdit);
+      records.forEach(r => r._marker.dragging?.[canEdit ? "enable" : "disable"]());
+      setHint(unlocked ? (canEdit ? "Edit mode ON" : "Unlocked") : "Locked");
+    }
+
+    function setLocked(locked){
+      unlocked = !locked;
+      unlockBtn.style.display = locked ? "" : "none";
+      lockBtn.style.display = locked ? "none" : "";
+      addWrap.style.display = locked ? "none" : "";
+      editWrap.style.display = locked ? "none" : "";
+      if (locked){ addModeEl.checked = false; editModeEl.checked = false; }
+      applyEditMode();
+    }
+
+    function initMap(){
+      const img = new Image();
+      img.onload = () => {
+        imageBounds = L.latLngBounds([[0,0],[img.naturalHeight,img.naturalWidth]]);
+        map = L.map("map", { crs:L.CRS.Simple, minZoom:-2, maxZoom:5, zoomControl:false, attributionControl:false });
+        L.control.zoom({ position:"bottomleft" }).addTo(map);
+        L.imageOverlay("map.jpg?v=" + Date.now(), imageBounds).addTo(map);
+        groups.public.addTo(map); groups.hidden.addTo(map);
+        map.fitBounds(imageBounds, { padding:[16,16] });
+        map.on("click", (e) => {
+          if (!(unlocked && addModeEl.checked)) return;
+          openAdd(e.latlng);
+        });
+        mapEl.style.display = "block";
+        statusEl.textContent = "Map loaded";
+        wireFirestore();
+        setLocked(true);
+      };
+      img.onerror = () => { statusEl.textContent = "Could not find map.jpg"; };
+      img.src = "map.jpg?v=" + Date.now();
+    }
+
+    function wireFirestore(){
+      onSnapshot(parkingCol, (snap) => {
+        snap.docChanges().forEach(chg => {
+          if (chg.type === "removed") return removeMarker(chg.doc.id);
+          const v = chg.doc.data() || {};
+          upsertMarker({ id:chg.doc.id, name:v.name || "Parking Lot", type:v.type || "public", x:Number(v.x), y:Number(v.y), notes:v.notes || "", lastChecked:v.lastChecked || "" });
+        });
+        statusEl.textContent = `Loaded ${records.size} parking lots`;
+      }, (err) => {
+        statusEl.textContent = "Firestore error";
+        console.error(err);
+        alert("Firestore error: " + err.message);
+      });
+    }
+
+    function openAdd(latlng){
+      editingId = null; pendingLatLng = latlng; modalTitle.textContent = "Add Parking Lot";
+      fName.value = ""; fType.value = "public"; fNotes.value = ""; fLastChecked.value = today();
+      coordNote.textContent = `Will be placed at x=${latlng.lng.toFixed(1)}, y=${latlng.lat.toFixed(1)}`;
+      parkingModal.classList.add("show");
+    }
+    function openEdit(rec){
+      editingId = rec.id; pendingLatLng = L.latLng(rec.y, rec.x); modalTitle.textContent = "Edit Parking Lot";
+      fName.value = rec.name || ""; fType.value = rec.type || "public"; fNotes.value = rec.notes || ""; fLastChecked.value = rec.lastChecked || today();
+      coordNote.textContent = `Current position: x=${Number(rec.x).toFixed(1)}, y=${Number(rec.y).toFixed(1)}. Drag marker to move it.`;
+      parkingModal.classList.add("show");
+    }
+    function closeParkingModal(){ parkingModal.classList.remove("show"); pendingLatLng = null; editingId = null; }
+
+    $("btnCancel").addEventListener("click", closeParkingModal);
+    $("btnSave").addEventListener("click", async () => {
+      const name = fName.value.trim();
+      if (!name) return alert("Name is required.");
+      const payload = { name, type:fType.value, notes:fNotes.value.trim(), lastChecked:fLastChecked.value || today(), updatedAt:serverTimestamp() };
+      if (editingId){
+        await updateDoc(doc(db, COLLECTION, editingId), payload);
+      } else {
+        payload.x = pendingLatLng.lng; payload.y = pendingLatLng.lat; payload.createdAt = serverTimestamp();
+        await addDoc(parkingCol, payload);
+      }
+      closeParkingModal();
+    });
+
+    unlockBtn.addEventListener("click", () => {
+      if (sessionStorage.getItem("nomad_pw_ok") === "1") return setLocked(false);
+      pwInput.value = ""; unlockModal.classList.add("show"); setTimeout(()=>pwInput.focus(),50);
+    });
+    lockBtn.addEventListener("click", async () => { setLocked(true); await signOut(auth); });
+    $("pwCancel").addEventListener("click", () => unlockModal.classList.remove("show"));
+    $("pwSubmit").addEventListener("click", () => {
+      if (pwInput.value.trim() !== EDIT_PASSWORD) return alert("Wrong password.");
+      if (rememberPw.checked) sessionStorage.setItem("nomad_pw_ok","1");
+      unlockModal.classList.remove("show"); setLocked(false);
+    });
+    pwInput.addEventListener("keydown", e => { if (e.key === "Enter") $("pwSubmit").click(); });
+    addModeEl.addEventListener("change", () => setHint(addModeEl.checked ? "Add mode ON: click the map" : "Add mode OFF"));
+    editModeEl.addEventListener("change", applyEditMode);
+
+    settingsBtn.addEventListener("click", (e) => { e.stopPropagation(); settingsMenu.style.display = settingsMenu.style.display === "block" ? "none" : "block"; });
+    document.addEventListener("click", () => settingsMenu.style.display = "none");
+
+    menuExport.addEventListener("click", () => {
+      const arr = [...records.values()].map(r => ({ name:r.name, type:r.type, x:r.x, y:r.y, notes:r.notes || "", lastChecked:r.lastChecked || "" }));
+      const blob = new Blob([JSON.stringify(arr,null,2)], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "nomad-parking.json"; a.click(); URL.revokeObjectURL(url);
+    });
+    menuImport.addEventListener("click", () => importFile.click());
+    importFile.addEventListener("change", async () => {
+      const file = importFile.files?.[0]; if (!file) return;
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data)) return alert("JSON must be an array.");
+      const batch = writeBatch(db);
+      data.forEach(item => {
+        const ref = doc(parkingCol);
+        batch.set(ref, {
+          name:item.name || "Parking Lot", type:item.type === "hidden" ? "hidden" : "public",
+          x:Number(item.x), y:Number(item.y), notes:item.notes || "", lastChecked:item.lastChecked || today(),
+          createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+        });
+      });
+      await batch.commit();
+      importFile.value = "";
+      alert(`Imported ${data.length} parking lots.`);
+    });
+    menuStats.addEventListener("click", () => {
+      const total = records.size;
+      let pub = 0, hid = 0;
+      records.forEach(r => r.type === "hidden" ? hid++ : pub++);
+      statsBody.innerHTML = `<p><strong>Total parking lots:</strong> ${total}</p><p>Public: ${pub}</p><p>Hidden: ${hid}</p>`;
+      statsModal.classList.add("show");
+    });
+    $("statsClose").addEventListener("click", () => statsModal.classList.remove("show"));
+    document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m) m.classList.remove("show"); }));
+    document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".modal.show").forEach(m => m.classList.remove("show")); });
+
+    $("btnGoogle").addEventListener("click", async () => {
+      gateMsg.textContent = "Opening Google sign-in…";
+      try { await signInWithPopup(auth, provider); }
+      catch(e){ gateMsg.textContent = "Sign-in cancelled or failed."; }
+    });
+    async function checkAllowlist(email){
+      if (!email) return false;
+      const snap = await getDoc(doc(db, "allowlist", email.toLowerCase()));
+      return snap.exists();
+    }
+    onAuthStateChanged(auth, async (user) => {
+      if (!user){ gate.style.display = "grid"; mapEl.style.display = "none"; setHint("Sign in required"); return; }
+      gateMsg.textContent = "Checking access…";
+      const ok = await checkAllowlist(user.email || "");
+      if (!ok){
+        gateMsg.textContent = `Access denied for ${user.email}. Add this email to the Firestore allowlist.`;
+        await signOut(auth); return;
+      }
+      gate.style.display = "none";
+      if (!booted){ booted = true; initMap(); }
+    });
+  </script>
+</body>
+</html>
