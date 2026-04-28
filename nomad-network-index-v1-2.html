@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Nomad Network</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin />
+  <style>
+    :root{
+      --bg:#071009;
+      --panel:#101914;
+      --panel2:#16231b;
+      --green:#43d17a;
+      --green2:#1f8f4c;
+      --text:#eaf7ee;
+      --muted:#a9b7ad;
+      --border:#294032;
+      --danger:#d95151;
+      --warning:#d8b64c;
+      --sea:#0fa8d2;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--sea);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    #toolbar{
+      position:fixed;inset:0 0 auto 0;height:58px;z-index:1000;
+      display:flex;align-items:center;gap:12px;padding:8px 12px;
+      background:rgba(7,16,9,.94);border-bottom:1px solid var(--border);backdrop-filter:blur(8px);
+    }
+    #brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+    #brand .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--green),#0e5d31);display:grid;place-items:center;color:#061108;font-weight:900;box-shadow:0 0 18px rgba(67,209,122,.35)}
+    #toolbar button,#toolbar select,#toolbar input[type="text"],#toolbar input[type="password"]{
+      border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);padding:8px 10px;font-weight:700;
+    }
+    #toolbar button{cursor:pointer;background:var(--green2);border-color:var(--green2)}
+    #toolbar button.secondary{background:var(--panel);border-color:var(--border)}
+    #toolbar button.danger{background:#502020;border-color:#7a2c2c}
+    #toolbar label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;white-space:nowrap}
+    #toolbar input[type="checkbox"]{accent-color:var(--green)}
+    #spacer{flex:1}
+    #hint{color:var(--muted);font-size:13px;white-space:nowrap}
+    #map{position:absolute;inset:58px 0 0 0;display:none;background:var(--sea)}
+    .leaflet-container{background:var(--sea)}
+    .leaflet-popup-content-wrapper{background:var(--panel);color:var(--text);border:1px solid var(--green2);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.45)}
+    .leaflet-popup-tip{background:var(--panel)}
+    .popup h3{margin:0 0 8px;font-size:16px;color:var(--green)}
+    .popup p{margin:5px 0;color:var(--text)}
+    .popup small{display:block;margin-top:8px;color:var(--muted)}
+    .popup-actions{display:flex;gap:8px;margin-top:10px}
+    .popup-actions button{border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:7px;padding:5px 9px;cursor:pointer}
+    .popup-actions button.delete{background:#442020;border-color:#6d3030}
+    body.locked .edit-only{display:none!important}
+    #gate{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:radial-gradient(circle at center,#12351f,#050906 70%)}
+    #gateCard{width:min(420px,calc(100vw - 28px));background:rgba(16,25,20,.96);border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.55);text-align:center}
+    #gateCard h1{margin:0 0 6px;color:var(--green);letter-spacing:.08em;text-transform:uppercase}
+    #gateCard p{margin:0 0 16px;color:var(--muted)}
+    #gateCard input{width:100%;margin:8px 0 12px;border:1px solid var(--border);background:#071009;color:var(--text);border-radius:10px;padding:12px;font-size:16px}
+    #gateCard button{width:100%;border:0;background:var(--green2);color:#fff;border-radius:10px;padding:12px;font-weight:900;cursor:pointer}
+    #gateMsg{min-height:20px;margin-top:10px;color:var(--warning);font-size:14px}
+    #status{position:fixed;left:10px;bottom:10px;z-index:1100;background:rgba(7,16,9,.86);border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 9px;font-size:12px}
+    #version{position:fixed;right:10px;bottom:10px;z-index:1100;background:rgba(7,16,9,.86);border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 9px;font-size:12px;font-family:monospace}
+    .modal{position:fixed;inset:0;z-index:1600;display:none;place-items:center;background:rgba(0,0,0,.55)}
+    .modal.show{display:grid}
+    .card{width:min(560px,calc(100vw - 26px));background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden}
+    .card header{padding:13px 15px;background:var(--panel2);border-bottom:1px solid var(--border);font-weight:900;color:var(--green)}
+    .card main{padding:15px;display:grid;gap:12px}
+    .card footer{padding:13px 15px;background:var(--panel2);border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+    .row{display:grid;gap:6px}
+    .row label{color:var(--muted);font-size:13px;font-weight:700}
+    .card input,.card select,.card textarea{width:100%;border:1px solid var(--border);background:#071009;color:var(--text);border-radius:10px;padding:10px;font:14px system-ui}
+    .card textarea{min-height:90px;resize:vertical}
+    .card button{border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;padding:9px 12px;font-weight:800;cursor:pointer}
+    .card button.primary{background:var(--green2);border-color:var(--green2)}
+    .card button.danger{background:#502020;border-color:#7a2c2c}
+    #toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:2500;background:rgba(7,16,9,.94);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);display:none;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+    @media(max-width:900px){#toolbar{height:auto;flex-wrap:wrap}.hide-small{display:none!important}#map{inset:104px 0 0 0}}
+  </style>
+</head>
+<body class="locked">
+  <div id="gate">
+    <div id="gateCard">
+      <h1>Nomad Network</h1>
+      <p>Enter the network password.</p>
+      <input id="networkPassword" type="password" placeholder="Password" autocomplete="current-password" />
+      <button id="enterBtn">Enter Network</button>
+      <div id="gateMsg"></div>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <div id="brand"><div class="mark">N</div><span>Nomad Network</span></div>
+
+    <label class="edit-only"><input id="addMode" type="checkbox"> Add</label>
+    <label class="edit-only"><input id="editMode" type="checkbox"> Edit</label>
+
+    <label><input id="showPublic" type="checkbox" checked> Public Garages</label>
+    <label><input id="showHidden" type="checkbox" checked> Hidden Garages</label>
+
+    <select id="jumpSelect" title="Jump to marker">
+      <option value="">Jump to marker...</option>
+    </select>
+
+    <button id="exportBtn" class="secondary">Export</button>
+    <button id="lockBtn" class="danger">Lock</button>
+    <div id="spacer"></div>
+    <span id="hint">Locked</span>
+  </div>
+
+  <div id="map"></div>
+  <div id="status">Loading...</div>
+  <div id="version">v1.2</div>
+  <div id="toast"></div>
+
+  <div id="markerModal" class="modal">
+    <div class="card">
+      <header id="modalTitle">Add Marker</header>
+      <main>
+        <div class="row">
+          <label>Name</label>
+          <input id="mName" type="text" placeholder="e.g., Legion Square Garage" />
+        </div>
+        <div class="row">
+          <label>Type</label>
+          <select id="mType">
+            <option value="public_garage">Public Garage</option>
+            <option value="hidden_garage">Hidden Garage</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Notes</label>
+          <textarea id="mNotes" placeholder="Any useful details..."></textarea>
+        </div>
+        <div class="row">
+          <label>Last Checked</label>
+          <input id="mLastChecked" type="text" placeholder="YYYY-MM-DD" />
+        </div>
+      </main>
+      <footer>
+        <button id="deleteBtn" class="danger" style="margin-right:auto;display:none">Delete</button>
+        <button id="cancelBtn">Cancel</button>
+        <button id="saveBtn" class="primary">Save</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import {
+      getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const VERSION = "1.2";
+    const NETWORK_PASSWORD = "NOMAD";
+    const COLLECTION = "nomad_markers";
+    const MAP_IMAGE = "map.jpg";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcfOML9FD1Q5vcoCb3NdIlFKtx3LAovBc",
+      authDomain: "dynasty8-property-map.firebaseapp.com",
+      projectId: "dynasty8-property-map",
+      storageBucket: "dynasty8-property-map.firebasestorage.app",
+      messagingSenderId: "849316207524",
+      appId: "1:849316207524:web:9c921ad842fc188d027f31",
+      measurementId: "G-VXG629H337"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const gate = document.getElementById("gate");
+    const networkPassword = document.getElementById("networkPassword");
+    const enterBtn = document.getElementById("enterBtn");
+    const gateMsg = document.getElementById("gateMsg");
+    const mapEl = document.getElementById("map");
+    const statusEl = document.getElementById("status");
+    const hintEl = document.getElementById("hint");
+    const toastEl = document.getElementById("toast");
+
+    const addModeEl = document.getElementById("addMode");
+    const editModeEl = document.getElementById("editMode");
+    const showPublicEl = document.getElementById("showPublic");
+    const showHiddenEl = document.getElementById("showHidden");
+    const jumpSelect = document.getElementById("jumpSelect");
+    const exportBtn = document.getElementById("exportBtn");
+    const lockBtn = document.getElementById("lockBtn");
+
+    const markerModal = document.getElementById("markerModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const mName = document.getElementById("mName");
+    const mType = document.getElementById("mType");
+    const mNotes = document.getElementById("mNotes");
+    const mLastChecked = document.getElementById("mLastChecked");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+
+    let map, imageBounds;
+    let unlocked = false;
+    let pendingLatLng = null;
+    let editing = null;
+    let currentIconSize = 30;
+    const markerStore = new Map();
+    const layers = {
+      public_garage: L.layerGroup(),
+      hidden_garage: L.layerGroup()
+    };
+
+    function toast(msg, ms=1600){
+      toastEl.textContent = msg;
+      toastEl.style.display = "block";
+      clearTimeout(toastEl._t);
+      toastEl._t = setTimeout(()=>toastEl.style.display="none", ms);
+    }
+    function hint(msg){ hintEl.textContent = msg; }
+    function today(){ return new Date().toISOString().slice(0,10); }
+    function typeLabel(type){
+      if (type === "hidden_garage") return "Hidden Garage";
+      if (type === "public_garage") return "Public Garage";
+      return type || "Marker";
+    }
+    function typeLayer(type){ return layers[type] || layers.public_garage; }
+    function iconFor(type){
+      const file = type === "hidden_garage" ? "garage-hidden.png" : "garage-public.png";
+      const s = currentIconSize;
+      return L.icon({ iconUrl:file, iconSize:[s,s], iconAnchor:[s/2,s/2], popupAnchor:[0,-s/2] });
+    }
+    function escapeHtml(s=""){
+      return String(s).replace(/[&<>\"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+    }
+
+    async function unlock(){
+      const pass = networkPassword.value.trim();
+      if (pass !== NETWORK_PASSWORD){ gateMsg.textContent = "Wrong password."; return; }
+      gateMsg.textContent = "Connecting...";
+      try{
+        await signInAnonymously(auth);
+        unlocked = true;
+        document.body.classList.remove("locked");
+        gate.style.display = "none";
+        mapEl.style.display = "block";
+        hint("Network unlocked");
+        if (!map) bootMap();
+        else setTimeout(()=>map.invalidateSize(), 50);
+      }catch(e){
+        gateMsg.textContent = "Firebase anonymous sign-in failed. Enable Anonymous Auth in Firebase.";
+        console.error(e);
+      }
+    }
+    enterBtn.addEventListener("click", unlock);
+    networkPassword.addEventListener("keydown", e => { if (e.key === "Enter") unlock(); });
+    lockBtn.addEventListener("click", async()=>{
+      unlocked = false;
+      document.body.classList.add("locked");
+      gate.style.display = "grid";
+      networkPassword.value = "";
+      addModeEl.checked = false;
+      editModeEl.checked = false;
+      applyEditMode();
+      try{ await signOut(auth); }catch{}
+      hint("Locked");
+    });
+
+    function bootMap(){
+      const img = new Image();
+      img.onload = () => initMap(MAP_IMAGE + "?v=" + Date.now(), img.naturalWidth, img.naturalHeight);
+      img.onerror = () => { statusEl.textContent = "Could not load map.jpg"; };
+      img.src = MAP_IMAGE + "?v=" + Date.now();
+    }
+
+    function initMap(imageUrl, w, h){
+      imageBounds = L.latLngBounds([[0,0],[h,w]]);
+      map = L.map("map", {
+        crs:L.CRS.Simple,
+        minZoom:-2,
+        maxZoom:2,
+        zoomControl:false,
+        attributionControl:false
+      });
+      L.control.zoom({position:"bottomleft"}).addTo(map);
+      L.imageOverlay(imageUrl, imageBounds, {interactive:false}).addTo(map);
+      layers.public_garage.addTo(map);
+      layers.hidden_garage.addTo(map);
+
+      map.fitBounds(imageBounds, {padding:[12,12]});
+      setTimeout(()=>map.invalidateSize(), 100);
+      statusEl.textContent = "Map loaded";
+
+      map.on("click", e => {
+        if (!unlocked || !addModeEl.checked) return;
+        openAddModal(e.latlng);
+      });
+      map.on("zoomend", () => {
+        const z = map.getZoom();
+        currentIconSize = Math.max(22, Math.min(44, Math.round(28 + z * 4)));
+        markerStore.forEach(entry => entry._marker?.setIcon(iconFor(entry.type)));
+      });
+
+      wireFirebase();
+    }
+
+    function popupHtml(entry){
+      return `<div class="popup">
+        <h3>${escapeHtml(entry.name || "Marker")}</h3>
+        <p><strong>Type:</strong> ${escapeHtml(typeLabel(entry.type))}</p>
+        ${entry.notes ? `<p><strong>Notes:</strong> ${escapeHtml(entry.notes)}</p>` : ""}
+        ${entry.lastChecked ? `<p><strong>Last checked:</strong> ${escapeHtml(entry.lastChecked)}</p>` : ""}
+        <small>x=${Number(entry.x).toFixed(1)}, y=${Number(entry.y).toFixed(1)}</small>
+        <div class="popup-actions edit-only">
+          <button data-action="edit">Edit</button>
+          <button class="delete" data-action="delete">Delete</button>
+        </div>
+      </div>`;
+    }
+
+    function createOrUpdate(entry){
+      const id = entry.id;
+      let existing = markerStore.get(id);
+      if (!existing){
+        const marker = L.marker([entry.y, entry.x], {
+          icon: iconFor(entry.type), draggable: unlocked && editModeEl.checked, keyboard:false, bubblingMouseEvents:false
+        }).bindTooltip(entry.name || "Marker", {direction:"top", offset:[0,-12]});
+        existing = {...entry, _marker: marker};
+        markerStore.set(id, existing);
+        typeLayer(entry.type).addLayer(marker);
+        marker.on("click", e => { L.DomEvent.stopPropagation(e); marker.openPopup(); });
+        marker.on("dragend", async e => {
+          if (!unlocked || !editModeEl.checked) return;
+          const pos = e.target.getLatLng();
+          try{
+            await updateDoc(doc(db, COLLECTION, id), { x:pos.lng, y:pos.lat, updatedAt:serverTimestamp() });
+            toast("Position saved");
+          }catch(err){ toast("Position save failed", 2500); console.error(err); }
+        });
+        marker.on("popupopen", e => {
+          const root = e.popup.getElement();
+          root?.querySelector('[data-action="edit"]')?.addEventListener("click", ev => { ev.stopPropagation(); openEditModal(existing); });
+          root?.querySelector('[data-action="delete"]')?.addEventListener("click", ev => { ev.stopPropagation(); confirmDelete(existing); });
+        });
+      }else{
+        const oldType = existing.type;
+        Object.assign(existing, entry);
+        if (oldType !== existing.type){
+          typeLayer(oldType).removeLayer(existing._marker);
+          typeLayer(existing.type).addLayer(existing._marker);
+        }
+        existing._marker.setLatLng([existing.y, existing.x]);
+        existing._marker.setIcon(iconFor(existing.type));
+        existing._marker.setTooltipContent(existing.name || "Marker");
+      }
+      existing._marker.bindPopup(popupHtml(existing));
+      applyEditMode();
+      refreshJumpList();
+    }
+
+    function removeMarker(id){
+      const entry = markerStore.get(id);
+      if (entry?._marker) typeLayer(entry.type).removeLayer(entry._marker);
+      markerStore.delete(id);
+      refreshJumpList();
+    }
+
+    function wireFirebase(){
+      const col = collection(db, COLLECTION);
+      onSnapshot(col, snap => {
+        snap.docChanges().forEach(chg => {
+          if (chg.type === "removed") return removeMarker(chg.doc.id);
+          const d = chg.doc.data() || {};
+          const entry = {
+            id: chg.doc.id,
+            name: d.name || "Unnamed Marker",
+            type: d.type || "public_garage",
+            x: Number(d.x),
+            y: Number(d.y),
+            notes: d.notes || "",
+            lastChecked: d.lastChecked || ""
+          };
+          if (Number.isFinite(entry.x) && Number.isFinite(entry.y)) createOrUpdate(entry);
+        });
+        statusEl.textContent = `Loaded ${markerStore.size} markers`;
+      }, err => {
+        statusEl.textContent = "Firestore error";
+        toast("Firestore error. Check rules/Auth.", 3500);
+        console.error(err);
+      });
+    }
+
+    function applyEditMode(){
+      const canEdit = unlocked && editModeEl.checked;
+      markerStore.forEach(entry => {
+        if (entry._marker?.dragging){
+          if (canEdit) entry._marker.dragging.enable();
+          else entry._marker.dragging.disable();
+        }
+      });
+      hint(canEdit ? "Edit mode ON" : (addModeEl.checked ? "Add mode ON" : "Ready"));
+    }
+    addModeEl.addEventListener("change", () => {
+      if (addModeEl.checked) editModeEl.checked = false;
+      applyEditMode();
+    });
+    editModeEl.addEventListener("change", () => {
+      if (editModeEl.checked) addModeEl.checked = false;
+      applyEditMode();
+    });
+
+    function applyLayerVisibility(){
+      if (!map) return;
+      if (showPublicEl.checked) layers.public_garage.addTo(map); else map.removeLayer(layers.public_garage);
+      if (showHiddenEl.checked) layers.hidden_garage.addTo(map); else map.removeLayer(layers.hidden_garage);
+    }
+    showPublicEl.addEventListener("change", applyLayerVisibility);
+    showHiddenEl.addEventListener("change", applyLayerVisibility);
+
+    function refreshJumpList(){
+      const old = jumpSelect.value;
+      const entries = [...markerStore.values()].sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+      jumpSelect.innerHTML = '<option value="">Jump to marker...</option>';
+      for (const e of entries){
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = `${e.name || "Unnamed"} — ${typeLabel(e.type)}`;
+        jumpSelect.appendChild(opt);
+      }
+      if (old && markerStore.has(old)) jumpSelect.value = old;
+    }
+    jumpSelect.addEventListener("change", () => {
+      const entry = markerStore.get(jumpSelect.value);
+      if (!entry || !map) return;
+      if (!map.hasLayer(typeLayer(entry.type))) {
+        if (entry.type === "public_garage") showPublicEl.checked = true;
+        if (entry.type === "hidden_garage") showHiddenEl.checked = true;
+        applyLayerVisibility();
+      }
+      map.setView([entry.y, entry.x], Math.min(1, map.getMaxZoom()));
+      entry._marker.openPopup();
+    });
+
+    function openAddModal(latlng){
+      pendingLatLng = latlng;
+      editing = null;
+      modalTitle.textContent = "Add Marker";
+      mName.value = "";
+      mType.value = "public_garage";
+      mNotes.value = "";
+      mLastChecked.value = today();
+      deleteBtn.style.display = "none";
+      markerModal.classList.add("show");
+      setTimeout(()=>mName.focus(), 50);
+    }
+    function openEditModal(entry){
+      if (!unlocked || !editModeEl.checked){ toast("Turn on Edit mode first."); return; }
+      editing = entry;
+      pendingLatLng = null;
+      modalTitle.textContent = "Edit Marker";
+      mName.value = entry.name || "";
+      mType.value = entry.type || "public_garage";
+      mNotes.value = entry.notes || "";
+      mLastChecked.value = entry.lastChecked || today();
+      deleteBtn.style.display = "inline-block";
+      markerModal.classList.add("show");
+    }
+    function closeModal(){ markerModal.classList.remove("show"); editing = null; pendingLatLng = null; }
+    cancelBtn.addEventListener("click", closeModal);
+    markerModal.addEventListener("click", e => { if (e.target === markerModal) closeModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+    saveBtn.addEventListener("click", async()=>{
+      const name = mName.value.trim();
+      if (!name){ toast("Name is required"); return; }
+      const payload = {
+        name,
+        type: mType.value,
+        notes: mNotes.value.trim(),
+        lastChecked: mLastChecked.value.trim(),
+        updatedAt: serverTimestamp()
+      };
+      try{
+        if (editing){
+          await updateDoc(doc(db, COLLECTION, editing.id), payload);
+          toast("Marker updated");
+        }else if (pendingLatLng){
+          await addDoc(collection(db, COLLECTION), {
+            ...payload,
+            x: pendingLatLng.lng,
+            y: pendingLatLng.lat,
+            createdAt: serverTimestamp()
+          });
+          toast("Marker added");
+        }
+        closeModal();
+      }catch(err){
+        toast("Save failed. Check Firebase rules.", 3000);
+        console.error(err);
+      }
+    });
+
+    async function confirmDelete(entry){
+      if (!confirm(`Delete ${entry.name}?`)) return;
+      try{
+        await deleteDoc(doc(db, COLLECTION, entry.id));
+        toast("Marker deleted");
+        closeModal();
+      }catch(err){ toast("Delete failed", 2500); console.error(err); }
+    }
+    deleteBtn.addEventListener("click", () => { if (editing) confirmDelete(editing); });
+
+    exportBtn.addEventListener("click", ()=>{
+      const arr = [...markerStore.values()].map(e => ({
+        name:e.name, type:e.type, x:e.x, y:e.y, notes:e.notes || "", lastChecked:e.lastChecked || ""
+      }));
+      const blob = new Blob([JSON.stringify(arr,null,2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "nomad-markers.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast("Exported markers");
+    });
+  </script>
+</body>
+</html>
