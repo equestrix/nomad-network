@@ -204,24 +204,10 @@
 
     #map{
       position:absolute;
-      inset:76px 12px 12px 327px;
-      background-color:#050907;
-      background-image:
-        linear-gradient(rgba(57,211,83,.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(57,211,83,.12) 1px, transparent 1px);
-      background-size:40px 40px;
-      border:2px solid var(--green2);
-      border-radius:16px;
-      overflow:hidden;
-      box-shadow:0 0 0 1px rgba(57,211,83,.18), 0 0 28px rgba(57,211,83,.12), inset 0 0 24px rgba(0,0,0,.45);
+      inset:64px 0 0 315px;
+      background:#0fa8d2;
     }
-    .leaflet-container{
-      background-color:#050907;
-      background-image:
-        linear-gradient(rgba(57,211,83,.12) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(57,211,83,.12) 1px, transparent 1px);
-      background-size:40px 40px;
-    }
+    .leaflet-container{ background:#0fa8d2; }
     .leaflet-control-zoom a{ background:#101711; color:var(--text); border-color:var(--border); }
     .leaflet-control-zoom a:hover{ background:#18231b; color:var(--green); }
 
@@ -399,7 +385,7 @@
         top:112px;
         width:245px;
       }
-      #map{ inset:124px 12px 12px 257px; }
+      #map{ inset:112px 0 0 245px; }
       #hint{ margin-left:0; width:100%; }
     }
   </style>
@@ -409,7 +395,7 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.3</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.3.1</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -448,7 +434,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.3</div>
+  <div id="version">v2.3.1</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -509,10 +495,16 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.3";
+    const APP_VERSION = "v2.3.1";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
+    const MAP_IMAGE_CANDIDATES = [
+      "assets/maps/map.jpg",
+      "assets/maps/map.jpeg",
+      "assets/maps/map.png",
+      "map.jpg"
+    ];
 
     // PASTE YOUR NEW NOMAD NETWORK FIREBASE CONFIG HERE.
     // Firebase Console → Project settings → Your apps → Web app config
@@ -659,7 +651,19 @@
     }
 
     function initMap(){
+      tryLoadMapImage(0);
+    }
+
+    function tryLoadMapImage(index){
+      if (index >= MAP_IMAGE_CANDIDATES.length) {
+        status.textContent = "Could not load map image. Check assets/maps/map.jpg";
+        return;
+      }
+
+      const mapPath = MAP_IMAGE_CANDIDATES[index];
+      const versionedMapPath = `${mapPath}?v=${APP_VERSION}`;
       const img = new Image();
+
       img.onload = () => {
         const w = img.naturalWidth;
         const h = img.naturalHeight;
@@ -675,7 +679,7 @@
           attributionControl:false
         });
 
-        L.imageOverlay("assets/maps/map.jpg?v=" + APP_VERSION, imageBounds).addTo(map);
+        L.imageOverlay(versionedMapPath, imageBounds).addTo(map);
         map.fitBounds(imageBounds, { padding:[80,80] });
 
         MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
@@ -699,10 +703,10 @@
       };
 
       img.onerror = () => {
-        status.textContent = "Could not load map.jpg";
+        tryLoadMapImage(index + 1);
       };
 
-      img.src = "assets/maps/map.jpg?v=" + APP_VERSION;
+      img.src = versionedMapPath;
     }
 
     let listening = false;
