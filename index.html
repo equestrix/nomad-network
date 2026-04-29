@@ -102,7 +102,25 @@
       align-items:center;
       justify-content:space-between;
       gap:8px;
-      margin-bottom:8px;
+      margin-bottom:0;
+    }
+    .type-toggle{
+      border:0;
+      background:transparent;
+      color:var(--text);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:0;
+      font-weight:800;
+      text-align:left;
+      flex:1;
+    }
+    .type-arrow{
+      color:var(--green);
+      width:14px;
+      display:inline-block;
     }
     .type-title{
       display:flex;
@@ -296,7 +314,7 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the network password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v1.6</span></p>
+      <p class="login-version">Version <span id="loginVersion">v1.8</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -328,7 +346,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v1.6</div>
+  <div id="version">v1.8</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -336,8 +354,9 @@
       <main>
         <label class="field">
           <span>Name</span>
-          <input id="markerName" type="text" placeholder="Example: Legion Square Garage" />
+          <input id="markerName" type="text" placeholder="Required for garages and misc only" />
         </label>
+        <div class="empty-type">Garages and misc markers need custom names. Other marker types can use their type name.</div>
 
         <div class="grid2">
           <label class="field">
@@ -345,6 +364,7 @@
             <select id="markerType">
               <option value="public_garage">Public Garage</option>
               <option value="hidden_garage">Hidden Garage</option>
+              <option value="misc">Misc</option>
               <option value="gun_truck">Gun Truck</option>
               <option value="crates">Crates</option>
               <option value="commercial_containers">Commercial Containers</option>
@@ -383,7 +403,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v1.6";
+    const APP_VERSION = "v1.8";
     const NETWORK_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
 
@@ -407,11 +427,12 @@
     let unlocked = false;
     let pendingLatLng = null;
     let editingId = null;
-    let currentIconSize = 30;
+    let currentIconSize = 22;
 
     const MARKER_TYPES = [
       { id:"public_garage", label:"Public Garage", icon:"garage-public.png", named:true },
       { id:"hidden_garage", label:"Hidden Garage", icon:"garage-hidden.png", named:true },
+      { id:"misc", label:"Misc", icon:"misc.png", named:true },
       { id:"gun_truck", label:"Gun Truck", icon:"gun-truck.png", named:false },
       { id:"crates", label:"Crates", icon:"crates.png", named:false },
       { id:"commercial_containers", label:"Commercial Containers", icon:"commercial-containers.png", named:false },
@@ -420,6 +441,7 @@
     ];
     const MARKER_TYPE_MAP = Object.fromEntries(MARKER_TYPES.map(t => [t.id, t]));
     const visibleTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, true]));
+    const expandedTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, false]));
 
     const markerData = new Map();
     const leafletMarkers = new Map();
@@ -463,6 +485,10 @@
 
     function typeLabel(type){
       return typeConfig(type).label;
+    }
+
+    function nameRequiredFor(type){
+      return !!typeConfig(type).named;
     }
 
     function iconFor(type){
@@ -535,7 +561,7 @@
 
         map.on("zoomend", () => {
           const z = map.getZoom();
-          currentIconSize = Math.max(22, Math.min(42, Math.round((z + 3) * 8)));
+          currentIconSize = Math.max(16, Math.min(30, Math.round((z + 3) * 5)));
           leafletMarkers.forEach((marker, id) => {
             const data = markerData.get(id);
             if (data) marker.setIcon(iconFor(data.type));
@@ -548,6 +574,7 @@
         });
 
         status.textContent = "Map ready";
+        updateSidebar();
       };
 
       img.onerror = () => {
@@ -651,8 +678,9 @@
         }
       });
 
-      marker.dragging[unlocked && editMode.checked ? "enable" : "disable"]();
+      setMarkerDraggable(marker);
       applyLayerVisibility();
+      updateSidebar();
     }
 
     function popupHtml(data){
@@ -682,9 +710,19 @@
       updateSidebar();
     }
 
+    function setMarkerDraggable(marker){
+      if (!marker || !marker.dragging) return;
+
+      if (unlocked && editMode.checked) {
+        marker.dragging.enable();
+      } else {
+        marker.dragging.disable();
+      }
+    }
+
     function applyEditMode(){
       leafletMarkers.forEach((marker) => {
-        marker.dragging[unlocked && editMode.checked ? "enable" : "disable"]();
+        setMarkerDraggable(marker);
       });
       setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : "Unlocked"));
     }
@@ -733,12 +771,18 @@
         const top = document.createElement("div");
         top.className = "type-top";
 
-        const title = document.createElement("label");
-        title.className = "type-title";
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "type-toggle";
+
+        const arrow = document.createElement("span");
+        arrow.className = "type-arrow";
+        arrow.textContent = expandedTypes[t.id] ? "▾" : "▸";
 
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = visibleTypes[t.id] !== false;
+        cb.addEventListener("click", (ev) => ev.stopPropagation());
         cb.addEventListener("change", () => {
           visibleTypes[t.id] = cb.checked;
           applyLayerVisibility();
@@ -747,19 +791,27 @@
         const name = document.createElement("span");
         name.textContent = t.label;
 
-        title.appendChild(cb);
-        title.appendChild(name);
+        toggle.appendChild(arrow);
+        toggle.appendChild(cb);
+        toggle.appendChild(name);
+
+        toggle.addEventListener("click", () => {
+          expandedTypes[t.id] = !expandedTypes[t.id];
+          updateSidebar();
+        });
 
         const count = document.createElement("span");
         count.className = "type-count";
         count.textContent = entries.length;
 
-        top.appendChild(title);
+        top.appendChild(toggle);
         top.appendChild(count);
         row.appendChild(top);
 
         const list = document.createElement("div");
         list.className = "marker-list";
+        list.style.display = expandedTypes[t.id] ? "grid" : "none";
+        list.style.marginTop = "8px";
 
         if (entries.length === 0) {
           const empty = document.createElement("div");
@@ -818,14 +870,18 @@
     }
 
     async function saveMarker(){
-      const name = markerName.value.trim();
       const type = markerType.value;
+      let name = markerName.value.trim();
       const notes = markerNotes.value.trim();
       const lastChecked = markerLastChecked.value;
 
-      if (!name) {
-        alert("Name is required.");
+      if (!name && nameRequiredFor(type)) {
+        alert("Name is required for garages and misc markers.");
         return;
+      }
+
+      if (!name) {
+        name = typeLabel(type);
       }
 
       if (editingId) {
@@ -921,6 +977,10 @@
     cancelBtn.addEventListener("click", closeModal);
     saveBtn.addEventListener("click", () => saveMarker().catch(err => alert("Save failed: " + err.message)));
     deleteBtn.addEventListener("click", () => deleteCurrentMarker().catch(err => alert("Delete failed: " + err.message)));
+    markerType.addEventListener("change", () => {
+      const required = nameRequiredFor(markerType.value);
+      markerName.placeholder = required ? "Required for garages and misc only" : `Optional — defaults to ${typeLabel(markerType.value)}`;
+    });
     markerModal.addEventListener("click", (e) => { if (e.target === markerModal) closeModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
