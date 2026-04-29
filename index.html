@@ -307,7 +307,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const NETWORK_PASSWORD = "1";
+    const NETWORK_PASSWORD = "NOMAD";
     const COLLECTION = "nomad_markers";
 
     // PASTE YOUR NEW NOMAD NETWORK FIREBASE CONFIG HERE.
@@ -732,6 +732,8 @@
         await signInAnonymously(auth);
         loginGate.style.display = "none";
         setHint("Unlocked");
+        status.textContent = "Loading markers...";
+        startFirestoreListener();
       } catch (error) {
         unlocked = false;
         loginMsg.textContent = "Firebase anonymous sign-in failed. Enable Anonymous Auth in Firebase.";
