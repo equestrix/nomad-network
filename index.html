@@ -211,6 +211,20 @@
     .leaflet-control-zoom a{ background:#101711; color:var(--text); border-color:var(--border); }
     .leaflet-control-zoom a:hover{ background:#18231b; color:var(--green); }
 
+    .leaflet-tooltip{
+      background:var(--panel);
+      color:var(--green);
+      border:1px solid var(--green2);
+      border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);
+      font-weight:800;
+      padding:5px 8px;
+    }
+    .leaflet-tooltip-top:before{ border-top-color:var(--green2); }
+    .leaflet-tooltip-bottom:before{ border-bottom-color:var(--green2); }
+    .leaflet-tooltip-left:before{ border-left-color:var(--green2); }
+    .leaflet-tooltip-right:before{ border-right-color:var(--green2); }
+
     #loginGate{
       position:fixed; inset:0; z-index:3000;
       display:grid; place-items:center;
@@ -381,7 +395,7 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the network password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v1.9.1</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.0</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -420,7 +434,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v1.9.1</div>
+  <div id="version">v2.0</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -452,6 +466,10 @@
           </label>
         </div>
 
+        <label class="check" style="align-self:start">
+          <input id="markerVerified" type="checkbox"> Verified information
+        </label>
+
         <label class="field">
           <span>Notes</span>
           <textarea id="markerNotes" placeholder="Useful details, access notes, risk, etc."></textarea>
@@ -477,7 +495,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v1.9.1";
+    const APP_VERSION = "v2.0";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
@@ -548,6 +566,7 @@
     const markerName = $("markerName");
     const markerType = $("markerType");
     const markerLastChecked = $("markerLastChecked");
+    const markerVerified = $("markerVerified");
     const markerNotes = $("markerNotes");
     const deleteBtn = $("deleteBtn");
     const cancelBtn = $("cancelBtn");
@@ -569,6 +588,14 @@
 
     function nameRequiredFor(type){
       return !!typeConfig(type).named;
+    }
+
+    function popupTitleFor(data){
+      return nameRequiredFor(data.type) ? (data.name || typeLabel(data.type)) : typeLabel(data.type);
+    }
+
+    function verifiedLabel(value){
+      return value ? "Verified" : "Unverified";
     }
 
     function iconFor(type){
@@ -687,6 +714,7 @@
             y: Number(v.y),
             notes: v.notes || "",
             lastChecked: v.lastChecked || "",
+            verified: !!v.verified,
           };
 
           if (!Number.isFinite(data.x) || !Number.isFinite(data.y)) return;
@@ -736,7 +764,7 @@
         marker.setIcon(iconFor(data.type));
       }
 
-      marker.bindTooltip(data.name, { direction:"top", offset:[0,-10] });
+      marker.bindTooltip(popupTitleFor(data), { direction:"top", offset:[0,-10] });
       marker.bindPopup(popupHtml(data), { autoPan:true });
 
       marker.off("popupopen");
@@ -765,7 +793,7 @@
 
     function popupHtml(data){
       const notes = data.notes ? `<p>${escapeHtml(data.notes)}</p>` : "";
-      const last = data.lastChecked ? `<p><strong>Last checked:</strong> ${escapeHtml(data.lastChecked)}</p>` : "";
+      const status = `<p><strong>Status:</strong> ${escapeHtml(verifiedLabel(data.verified))}</p>`;
       const actions = editingUnlocked ? `
         <div class="popup-actions">
           <button data-edit="${escapeHtml(data.id)}">Edit</button>
@@ -773,10 +801,10 @@
 
       return `
         <div class="popup">
-          <h3>${escapeHtml(data.name)}</h3>
+          <h3>${escapeHtml(popupTitleFor(data))}</h3>
           <p><span class="type-pill">${escapeHtml(typeLabel(data.type))}</span></p>
+          ${status}
           ${notes}
-          ${last}
           ${actions}
         </div>`;
     }
@@ -935,6 +963,7 @@
       markerName.value = "";
       markerType.value = "public_garage";
       markerLastChecked.value = todayISO();
+      markerVerified.checked = false;
       markerNotes.value = "";
       deleteBtn.style.display = "none";
       markerModal.classList.add("show");
@@ -951,6 +980,7 @@
       markerName.value = data.name || "";
       markerType.value = data.type || "public_garage";
       markerLastChecked.value = data.lastChecked || "";
+      markerVerified.checked = !!data.verified;
       markerNotes.value = data.notes || "";
       deleteBtn.style.display = "";
       markerModal.classList.add("show");
@@ -968,6 +998,7 @@
       let name = markerName.value.trim();
       const notes = markerNotes.value.trim();
       const lastChecked = markerLastChecked.value;
+      const verified = markerVerified.checked;
 
       if (!name && nameRequiredFor(type)) {
         alert("Name is required for garages and misc markers.");
@@ -980,13 +1011,13 @@
 
       if (editingId) {
         await updateDoc(doc(db, COLLECTION, editingId), {
-          name, type, notes, lastChecked,
+          name, type, notes, lastChecked, verified,
           updatedAt: serverTimestamp()
         });
       } else {
         if (!pendingLatLng) return;
         await addDoc(markersCol, {
-          name, type, notes, lastChecked,
+          name, type, notes, lastChecked, verified,
           x: pendingLatLng.lng,
           y: pendingLatLng.lat,
           createdAt: serverTimestamp(),
@@ -1009,7 +1040,7 @@
     function exportMarkers(){
       const arr = Array.from(markerData.values())
         .sort((a,b) => a.name.localeCompare(b.name))
-        .map(({id, name, type, x, y, notes, lastChecked}) => ({id, name, type, x, y, notes, lastChecked}));
+        .map(({id, name, type, x, y, notes, lastChecked, verified}) => ({id, name, type, x, y, notes, lastChecked, verified}));
 
       const blob = new Blob([JSON.stringify(arr, null, 2)], { type:"application/json" });
       const url = URL.createObjectURL(blob);
