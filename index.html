@@ -225,39 +225,127 @@
     .leaflet-tooltip-left:before{ border-left-color:var(--green2); }
     .leaflet-tooltip-right:before{ border-right-color:var(--green2); }
 
+
     #loginGate{
-      position:fixed; inset:0; z-index:3000;
-      display:grid; place-items:center;
-      background:radial-gradient(circle at top, #193b24, #080b09 65%);
-      padding:20px;
+      position:fixed;
+      inset:0;
+      z-index:3000;
+      display:block;
+      background:
+        linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.08)),
+        url("assets/backgrounds/nomad-network-background.png") center center / cover no-repeat,
+        #050705;
+      overflow:hidden;
     }
+
     #loginCard{
-      width:min(440px, calc(100vw - 32px));
-      background:rgba(18,25,20,.96);
-      border:1px solid var(--border);
-      border-radius:16px;
-      box-shadow:0 20px 70px rgba(0,0,0,.5);
-      padding:22px;
+      position:absolute;
+      left:50%;
+      top:76.5%;
+      transform:translate(-50%, -50%);
+      width:clamp(360px, 29vw, 560px);
+      padding:0;
+      background:transparent;
+      border:0;
+      box-shadow:none;
+      z-index:2;
     }
-    #loginCard h1{
-      margin:0 0 6px;
-      color:var(--green);
-      letter-spacing:.08em;
-      font-size:24px;
+
+    #loginCard h1,
+    #loginCard p,
+    #loginCard .login-version{
+      display:none;
     }
-    #loginCard p{ margin:0 0 18px; color:var(--muted); }
-    #loginCard .login-version{ margin:-8px 0 18px; font-size:12px; color:var(--green); }
+
     #passwordInput{
       width:100%;
-      background:#0b0f0d;
+      height:clamp(44px, 3.75vw, 62px);
+      background:rgba(5,8,6,.28);
       color:var(--text);
-      border:1px solid var(--border);
-      padding:11px 12px;
-      border-radius:10px;
-      margin-bottom:12px;
+      border:1px solid rgba(159,166,151,.45);
+      padding:0 18px;
+      border-radius:5px;
+      margin:0 0 clamp(14px, 1.1vw, 22px);
+      font-size:clamp(16px, 1.05vw, 22px);
+      letter-spacing:.04em;
+      box-shadow:0 0 0 1px rgba(0,0,0,.45) inset;
+      backdrop-filter:blur(1px);
     }
-    #loginMsg{ min-height:18px; color:#ffb4b4; font-size:13px; margin-top:10px; }
 
+    #passwordInput::placeholder{
+      color:rgba(210,214,203,.52);
+    }
+
+    #passwordInput:focus{
+      outline:none;
+      border-color:rgba(94,193,70,.86);
+      box-shadow:
+        0 0 0 2px rgba(57,211,83,.12),
+        0 0 18px rgba(57,211,83,.14);
+    }
+
+    #loginBtn{
+      width:100%;
+      height:clamp(54px, 4.2vw, 74px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:5px;
+      border:1px solid rgba(91,183,67,.76);
+      background:linear-gradient(180deg, rgba(48,84,28,.55), rgba(18,38,13,.62));
+      color:#eef5e9;
+      text-transform:uppercase;
+      font-size:clamp(16px, 1.25vw, 25px);
+      letter-spacing:.08em;
+      font-weight:900;
+      text-shadow:0 2px 0 rgba(0,0,0,.55);
+      box-shadow:
+        0 0 20px rgba(57,211,83,.13),
+        0 0 0 1px rgba(0,0,0,.6) inset;
+      cursor:pointer;
+      backdrop-filter:blur(1px);
+    }
+
+    #loginBtn:hover{
+      filter:brightness(1.08);
+      box-shadow:
+        0 0 26px rgba(57,211,83,.2),
+        0 0 0 1px rgba(0,0,0,.6) inset;
+    }
+
+    #loginMsg{
+      min-height:20px;
+      color:#ffb4b4;
+      font-size:13px;
+      margin-top:12px;
+      text-align:center;
+      text-shadow:0 2px 4px rgba(0,0,0,.85);
+    }
+
+    @media (max-aspect-ratio: 16/9){
+      #loginCard{
+        top:76.5%;
+        width:clamp(320px, 45vw, 520px);
+      }
+    }
+
+    @media (max-width:700px){
+      #loginGate{
+        background-position:center center;
+      }
+      #loginCard{
+        top:76%;
+        width:min(82vw, 460px);
+      }
+      #passwordInput{
+        height:46px;
+        font-size:16px;
+      }
+      #loginBtn{
+        height:54px;
+        font-size:16px;
+      }
+    }
     .modal{
       position:fixed; inset:0; z-index:2000;
       display:none; place-items:center;
@@ -395,9 +483,9 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.3.1</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.5</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
-      <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
+      <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
     </div>
   </div>
@@ -434,7 +522,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.3.1</div>
+  <div id="version">v2.5</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -495,7 +583,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.3.1";
+    const APP_VERSION = "v2.5";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
