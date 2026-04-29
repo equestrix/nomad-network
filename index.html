@@ -395,7 +395,7 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the network password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.0</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.1</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -434,7 +434,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.0</div>
+  <div id="version">v2.1</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -495,7 +495,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.0";
+    const APP_VERSION = "v2.1";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
@@ -794,6 +794,9 @@
     function popupHtml(data){
       const notes = data.notes ? `<p>${escapeHtml(data.notes)}</p>` : "";
       const status = `<p><strong>Status:</strong> ${escapeHtml(verifiedLabel(data.verified))}</p>`;
+      const typeLine = nameRequiredFor(data.type)
+        ? `<p><span class="type-pill">${escapeHtml(typeLabel(data.type))}</span></p>`
+        : "";
       const actions = editingUnlocked ? `
         <div class="popup-actions">
           <button data-edit="${escapeHtml(data.id)}">Edit</button>
@@ -802,7 +805,7 @@
       return `
         <div class="popup">
           <h3>${escapeHtml(popupTitleFor(data))}</h3>
-          <p><span class="type-pill">${escapeHtml(typeLabel(data.type))}</span></p>
+          ${typeLine}
           ${status}
           ${notes}
           ${actions}
@@ -828,9 +831,17 @@
       }
     }
 
+    function refreshMarkerPopup(id){
+      const data = markerData.get(id);
+      const marker = leafletMarkers.get(id);
+      if (!data || !marker) return;
+      marker.bindPopup(popupHtml(data), { autoPan:true });
+    }
+
     function applyEditMode(){
-      leafletMarkers.forEach((marker) => {
+      leafletMarkers.forEach((marker, id) => {
         setMarkerDraggable(marker);
+        refreshMarkerPopup(id);
       });
       setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : (editingUnlocked ? "Editing unlocked" : "Viewer mode")));
     }
