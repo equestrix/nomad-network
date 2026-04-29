@@ -59,15 +59,6 @@
     .btn.ghost{ background:transparent; }
     .btn:disabled{ opacity:.45; cursor:not-allowed; }
 
-    #garageSelect{
-      min-width:230px;
-      background:var(--panel2);
-      color:var(--text);
-      border:1px solid var(--border);
-      padding:7px 10px;
-      border-radius:8px;
-    }
-
     #hint{
       color:var(--muted);
       font-size:13px;
@@ -75,9 +66,87 @@
       white-space:nowrap;
     }
 
+    #markerSidebar{
+      position:fixed;
+      top:64px;
+      left:0;
+      bottom:0;
+      width:315px;
+      z-index:900;
+      background:rgba(11,15,13,.96);
+      border-right:1px solid var(--border);
+      overflow:auto;
+      padding:12px;
+      backdrop-filter:blur(8px);
+    }
+    #markerSidebar h2{
+      margin:0 0 4px;
+      color:var(--green);
+      font-size:15px;
+      letter-spacing:.05em;
+    }
+    #markerSidebar .sidebar-note{
+      margin:0 0 12px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .type-row{
+      border:1px solid var(--border);
+      background:var(--panel);
+      border-radius:10px;
+      padding:10px;
+      margin-bottom:10px;
+    }
+    .type-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .type-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:800;
+      color:var(--text);
+      font-size:13px;
+    }
+    .type-title input{ transform:translateY(1px); }
+    .type-count{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .marker-list{
+      display:grid;
+      gap:6px;
+    }
+    .marker-jump{
+      width:100%;
+      text-align:left;
+      background:var(--panel2);
+      color:var(--text);
+      border:1px solid var(--border);
+      padding:7px 8px;
+      border-radius:8px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .marker-jump:hover{
+      border-color:var(--green);
+      color:var(--green);
+    }
+    .empty-type{
+      color:var(--muted);
+      font-size:12px;
+      padding:4px 2px;
+    }
+
     #map{
       position:absolute;
-      inset:64px 0 0 0;
+      inset:64px 0 0 315px;
       background:#0fa8d2;
     }
     .leaflet-container{ background:#0fa8d2; }
@@ -105,6 +174,7 @@
       font-size:24px;
     }
     #loginCard p{ margin:0 0 18px; color:var(--muted); }
+    #loginCard .login-version{ margin:-8px 0 18px; font-size:12px; color:var(--green); }
     #passwordInput{
       width:100%;
       background:#0b0f0d;
@@ -212,9 +282,12 @@
 
     @media (max-width:900px){
       #topbar{ height:auto; min-height:64px; flex-wrap:wrap; }
-      #map{ inset:112px 0 0 0; }
+      #markerSidebar{
+        top:112px;
+        width:245px;
+      }
+      #map{ inset:112px 0 0 245px; }
       #hint{ margin-left:0; width:100%; }
-      #garageSelect{ min-width:180px; flex:1; }
     }
   </style>
 </head>
@@ -222,7 +295,8 @@
   <div id="loginGate">
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
-      <p>Enter the network password to access the map.</p>
+      <p>Enter the network password to access the network.</p>
+      <p class="login-version">Version <span id="loginVersion">v1.6</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -240,24 +314,21 @@
       <label class="check"><input id="editMode" type="checkbox"> Edit</label>
     </div>
 
-    <div class="control-group">
-      <label class="check"><input id="showPublic" type="checkbox" checked> Public garages</label>
-      <label class="check"><input id="showHidden" type="checkbox" checked> Hidden garages</label>
-    </div>
-
-    <select id="garageSelect">
-      <option value="">Jump to marker...</option>
-    </select>
-
     <button id="exportBtn" class="btn">Export</button>
     <button id="lockBtn" class="btn ghost">Lock</button>
 
     <div id="hint">Locked</div>
   </div>
 
+  <aside id="markerSidebar">
+    <h2>MARKERS</h2>
+    <p class="sidebar-note">Turn marker types on/off. Click a named marker to jump to it.</p>
+    <div id="sidebarTypes"></div>
+  </aside>
+
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v1.3</div>
+  <div id="version">v1.6</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -274,6 +345,11 @@
             <select id="markerType">
               <option value="public_garage">Public Garage</option>
               <option value="hidden_garage">Hidden Garage</option>
+              <option value="gun_truck">Gun Truck</option>
+              <option value="crates">Crates</option>
+              <option value="commercial_containers">Commercial Containers</option>
+              <option value="chemistry_merchant">Chemistry Set Merchant</option>
+              <option value="russian">The Russian</option>
             </select>
           </label>
           <label class="field">
@@ -307,7 +383,8 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const NETWORK_PASSWORD = "NOMAD";
+    const APP_VERSION = "v1.6";
+    const NETWORK_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
 
     // PASTE YOUR NEW NOMAD NETWORK FIREBASE CONFIG HERE.
@@ -330,14 +407,23 @@
     let unlocked = false;
     let pendingLatLng = null;
     let editingId = null;
-    let currentIconSize = 24;
+    let currentIconSize = 30;
+
+    const MARKER_TYPES = [
+      { id:"public_garage", label:"Public Garage", icon:"garage-public.png", named:true },
+      { id:"hidden_garage", label:"Hidden Garage", icon:"garage-hidden.png", named:true },
+      { id:"gun_truck", label:"Gun Truck", icon:"gun-truck.png", named:false },
+      { id:"crates", label:"Crates", icon:"crates.png", named:false },
+      { id:"commercial_containers", label:"Commercial Containers", icon:"commercial-containers.png", named:false },
+      { id:"chemistry_merchant", label:"Chemistry Set Merchant", icon:"chemistry-merchant.png", named:false },
+      { id:"russian", label:"The Russian", icon:"russian.png", named:false }
+    ];
+    const MARKER_TYPE_MAP = Object.fromEntries(MARKER_TYPES.map(t => [t.id, t]));
+    const visibleTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, true]));
 
     const markerData = new Map();
     const leafletMarkers = new Map();
-    const layers = {
-      public_garage: L.layerGroup(),
-      hidden_garage: L.layerGroup()
-    };
+    const layers = Object.fromEntries(MARKER_TYPES.map(t => [t.id, L.layerGroup()]));
 
     const $ = (id) => document.getElementById(id);
 
@@ -347,13 +433,13 @@
     const loginMsg = $("loginMsg");
     const addMode = $("addMode");
     const editMode = $("editMode");
-    const showPublic = $("showPublic");
-    const showHidden = $("showHidden");
-    const garageSelect = $("garageSelect");
+    const sidebarTypes = $("sidebarTypes");
     const exportBtn = $("exportBtn");
     const lockBtn = $("lockBtn");
     const hint = $("hint");
     const status = $("status");
+    const versionBadge = $("version");
+    const loginVersion = $("loginVersion");
 
     const markerModal = $("markerModal");
     const modalTitle = $("modalTitle");
@@ -365,16 +451,22 @@
     const cancelBtn = $("cancelBtn");
     const saveBtn = $("saveBtn");
 
+    if (versionBadge) versionBadge.textContent = APP_VERSION;
+    if (loginVersion) loginVersion.textContent = APP_VERSION;
+
     function setHint(text){ hint.textContent = text; }
     function todayISO(){ return new Date().toISOString().slice(0,10); }
 
+    function typeConfig(type){
+      return MARKER_TYPE_MAP[type] || MARKER_TYPE_MAP.public_garage;
+    }
+
     function typeLabel(type){
-      if (type === "hidden_garage") return "Hidden Garage";
-      return "Public Garage";
+      return typeConfig(type).label;
     }
 
     function iconFor(type){
-      const file = type === "hidden_garage" ? "garage-hidden.png" : "garage-public.png";
+      const file = typeConfig(type).icon;
       const s = currentIconSize;
       return L.icon({
         iconUrl: file,
@@ -386,7 +478,7 @@
     }
 
     function layerFor(type){
-      return type === "hidden_garage" ? layers.hidden_garage : layers.public_garage;
+      return layers[typeConfig(type).id] || layers.public_garage;
     }
 
     function escapeHtml(value){
@@ -430,7 +522,7 @@
         map = L.map("map", {
           crs: L.CRS.Simple,
           minZoom: -2,
-          maxZoom: 5,
+          maxZoom: 1,
           zoomSnap: .25,
           zoomDelta: .25,
           attributionControl:false
@@ -439,12 +531,11 @@
         L.imageOverlay("map.jpg?v=" + Date.now(), imageBounds).addTo(map);
         map.fitBounds(imageBounds, { padding:[20,20] });
 
-        layers.public_garage.addTo(map);
-        layers.hidden_garage.addTo(map);
+        MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
 
         map.on("zoomend", () => {
           const z = map.getZoom();
-        currentIconSize = Math.max(18, Math.min(34, Math.round((z + 3) * 6)));
+          currentIconSize = Math.max(22, Math.min(42, Math.round((z + 3) * 8)));
           leafletMarkers.forEach((marker, id) => {
             const data = markerData.get(id);
             if (data) marker.setIcon(iconFor(data.type));
@@ -495,7 +586,7 @@
           upsertMarker(data);
         });
 
-        updateGarageSelect();
+        updateSidebar();
         status.textContent = `Loaded ${markerData.size} markers`;
       }, (error) => {
         status.textContent = "Firestore error";
@@ -560,13 +651,7 @@
         }
       });
 
-      if (marker.dragging) {
-  if (unlocked && editMode.checked) {
-    marker.dragging.enable();
-  } else {
-    marker.dragging.disable();
-  }
-}
+      marker.dragging[unlocked && editMode.checked ? "enable" : "disable"]();
       applyLayerVisibility();
     }
 
@@ -594,52 +679,107 @@
       if (data && marker) layerFor(data.type).removeLayer(marker);
       markerData.delete(id);
       leafletMarkers.delete(id);
-      updateGarageSelect();
+      updateSidebar();
     }
 
-function applyEditMode(){
-  leafletMarkers.forEach((marker) => {
-    if (!marker.dragging) return;
-
-    if (unlocked && editMode.checked) {
-      marker.dragging.enable();
-    } else {
-      marker.dragging.disable();
+    function applyEditMode(){
+      leafletMarkers.forEach((marker) => {
+        marker.dragging[unlocked && editMode.checked ? "enable" : "disable"]();
+      });
+      setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : "Unlocked"));
     }
-  });
-
-  setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : "Unlocked"));
-}
 
     function applyLayerVisibility(){
       if (!map) return;
 
-      if (showPublic.checked) {
-        if (!map.hasLayer(layers.public_garage)) layers.public_garage.addTo(map);
-      } else {
-        if (map.hasLayer(layers.public_garage)) map.removeLayer(layers.public_garage);
-      }
+      MARKER_TYPES.forEach(t => {
+        const layer = layers[t.id];
+        if (!layer) return;
 
-      if (showHidden.checked) {
-        if (!map.hasLayer(layers.hidden_garage)) layers.hidden_garage.addTo(map);
-      } else {
-        if (map.hasLayer(layers.hidden_garage)) map.removeLayer(layers.hidden_garage);
-      }
+        if (visibleTypes[t.id]) {
+          if (!map.hasLayer(layer)) layer.addTo(map);
+        } else {
+          if (map.hasLayer(layer)) map.removeLayer(layer);
+        }
+      });
     }
 
-    function updateGarageSelect(){
-      const selected = garageSelect.value;
-      const entries = Array.from(markerData.values()).sort((a,b) => a.name.localeCompare(b.name));
+    function jumpToMarker(id){
+      const data = markerData.get(id);
+      const marker = leafletMarkers.get(id);
+      if (!data || !marker || !map) return;
 
-      garageSelect.innerHTML = `<option value="">Jump to marker...</option>`;
-      for (const m of entries) {
-        const opt = document.createElement("option");
-        opt.value = m.id;
-        opt.textContent = `${m.name} — ${typeLabel(m.type)}`;
-        garageSelect.appendChild(opt);
-      }
+      visibleTypes[typeConfig(data.type).id] = true;
+      updateSidebar();
+      applyLayerVisibility();
 
-      if (selected && markerData.has(selected)) garageSelect.value = selected;
+      map.setView([data.y, data.x], Math.min(1, Math.max(map.getZoom(), 0.25)));
+      marker.openPopup();
+    }
+
+    function updateSidebar(){
+      if (!sidebarTypes) return;
+
+      sidebarTypes.innerHTML = "";
+
+      MARKER_TYPES.forEach(t => {
+        const entries = Array.from(markerData.values())
+          .filter(m => typeConfig(m.type).id === t.id)
+          .sort((a,b) => a.name.localeCompare(b.name));
+
+        const row = document.createElement("section");
+        row.className = "type-row";
+
+        const top = document.createElement("div");
+        top.className = "type-top";
+
+        const title = document.createElement("label");
+        title.className = "type-title";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = visibleTypes[t.id] !== false;
+        cb.addEventListener("change", () => {
+          visibleTypes[t.id] = cb.checked;
+          applyLayerVisibility();
+        });
+
+        const name = document.createElement("span");
+        name.textContent = t.label;
+
+        title.appendChild(cb);
+        title.appendChild(name);
+
+        const count = document.createElement("span");
+        count.className = "type-count";
+        count.textContent = entries.length;
+
+        top.appendChild(title);
+        top.appendChild(count);
+        row.appendChild(top);
+
+        const list = document.createElement("div");
+        list.className = "marker-list";
+
+        if (entries.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty-type";
+          empty.textContent = "No markers yet";
+          list.appendChild(empty);
+        } else {
+          entries.forEach(m => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "marker-jump";
+            btn.textContent = m.name || "Unnamed Marker";
+            btn.addEventListener("click", () => jumpToMarker(m.id));
+            list.appendChild(btn);
+          });
+        }
+
+        row.appendChild(list);
+        sidebarTypes.appendChild(row);
+      });
     }
 
     function openAddModal(latlng){
@@ -775,23 +915,6 @@ function applyEditMode(){
     editMode.addEventListener("change", () => {
       if (editMode.checked) addMode.checked = false;
       applyEditMode();
-    });
-    showPublic.addEventListener("change", applyLayerVisibility);
-    showHidden.addEventListener("change", applyLayerVisibility);
-    garageSelect.addEventListener("change", () => {
-      const id = garageSelect.value;
-      if (!id) return;
-      const data = markerData.get(id);
-      const marker = leafletMarkers.get(id);
-      if (!data || !marker) return;
-
-      const type = data.type || "public_garage";
-      if (type === "public_garage" && !showPublic.checked) showPublic.checked = true;
-      if (type === "hidden_garage" && !showHidden.checked) showHidden.checked = true;
-      applyLayerVisibility();
-
-      map.setView([data.y, data.x], Math.min(1, Math.max(map.getZoom(), 0.25)));
-      marker.openPopup();
     });
     exportBtn.addEventListener("click", exportMarkers);
     lockBtn.addEventListener("click", lock);
