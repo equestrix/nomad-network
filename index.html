@@ -560,7 +560,13 @@
         }
       });
 
-      marker.dragging[unlocked && editMode.checked ? "enable" : "disable"]();
+      if (marker.dragging) {
+  if (unlocked && editMode.checked) {
+    marker.dragging.enable();
+  } else {
+    marker.dragging.disable();
+  }
+}
       applyLayerVisibility();
     }
 
@@ -591,12 +597,19 @@
       updateGarageSelect();
     }
 
-    function applyEditMode(){
-      leafletMarkers.forEach((marker) => {
-        marker.dragging[unlocked && editMode.checked ? "enable" : "disable"]();
-      });
-      setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : "Unlocked"));
+function applyEditMode(){
+  leafletMarkers.forEach((marker) => {
+    if (!marker.dragging) return;
+
+    if (unlocked && editMode.checked) {
+      marker.dragging.enable();
+    } else {
+      marker.dragging.disable();
     }
+  });
+
+  setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : "Unlocked"));
+}
 
     function applyLayerVisibility(){
       if (!map) return;
