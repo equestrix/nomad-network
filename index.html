@@ -409,7 +409,7 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.2</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.3</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -448,7 +448,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.2</div>
+  <div id="version">v2.3</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -509,7 +509,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.2";
+    const APP_VERSION = "v2.3";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
@@ -538,14 +538,14 @@
     let currentIconSize = 22;
 
     const MARKER_TYPES = [
-      { id:"public_garage", label:"Public Garage", icon:"garage-public.png", named:true },
-      { id:"hidden_garage", label:"Hidden Garage", icon:"garage-hidden.png", named:true },
-      { id:"gun_truck", label:"Gun Truck", icon:"gun-truck.png", named:false },
-      { id:"crates", label:"Crates", icon:"crates.png", named:false },
-      { id:"commercial_containers", label:"Commercial Containers", icon:"commercial-containers.png", named:false },
-      { id:"chemistry_merchant", label:"Chemistry Set Merchant", icon:"chemistry-merchant.png", named:false },
-      { id:"russian", label:"The Russian", icon:"russian.png", named:false },
-      { id:"misc", label:"Misc", icon:"misc.png", named:true }
+      { id:"public_garage", label:"Public Garage", icon:"assets/markers/garage-public.png", named:true },
+      { id:"hidden_garage", label:"Hidden Garage", icon:"assets/markers/garage-hidden.png", named:true },
+      { id:"gun_truck", label:"Gun Truck", icon:"assets/markers/gun-truck.png", named:false },
+      { id:"crates", label:"Crates", icon:"assets/markers/crates.png", named:false },
+      { id:"commercial_containers", label:"Commercial Containers", icon:"assets/markers/commercial-containers.png", named:false },
+      { id:"chemistry_merchant", label:"Chemistry Set Merchant", icon:"assets/markers/chemistry-merchant.png", named:false },
+      { id:"russian", label:"The Russian", icon:"assets/markers/russian.png", named:false },
+      { id:"misc", label:"Misc", icon:"assets/markers/misc.png", named:true }
     ];
     const MARKER_TYPE_MAP = Object.fromEntries(MARKER_TYPES.map(t => [t.id, t]));
     const visibleTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, true]));
@@ -675,7 +675,7 @@
           attributionControl:false
         });
 
-        L.imageOverlay("map.jpg?v=" + APP_VERSION, imageBounds).addTo(map);
+        L.imageOverlay("assets/maps/map.jpg?v=" + APP_VERSION, imageBounds).addTo(map);
         map.fitBounds(imageBounds, { padding:[80,80] });
 
         MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
@@ -702,7 +702,7 @@
         status.textContent = "Could not load map.jpg";
       };
 
-      img.src = "map.jpg?v=" + APP_VERSION;
+      img.src = "assets/maps/map.jpg?v=" + APP_VERSION;
     }
 
     let listening = false;
