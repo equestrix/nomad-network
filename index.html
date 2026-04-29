@@ -59,10 +59,50 @@
     .btn.ghost{ background:transparent; }
     .btn:disabled{ opacity:.45; cursor:not-allowed; }
 
+    #editControls{
+      display:none;
+      align-items:center;
+      gap:8px;
+    }
+    #editControls.show{ display:flex; }
+
+    #settings{
+      position:relative;
+      margin-left:auto;
+    }
+    #settingsMenu{
+      position:absolute;
+      top:42px;
+      right:0;
+      display:none;
+      min-width:180px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:10px;
+      box-shadow:0 14px 40px rgba(0,0,0,.45);
+      overflow:hidden;
+      z-index:1500;
+    }
+    #settingsMenu.show{ display:block; }
+    #settingsMenu button{
+      display:block;
+      width:100%;
+      text-align:left;
+      background:transparent;
+      color:var(--text);
+      border:0;
+      padding:10px 12px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    #settingsMenu button:hover{
+      background:var(--panel2);
+      color:var(--green);
+    }
+
     #hint{
       color:var(--muted);
       font-size:13px;
-      margin-left:auto;
       white-space:nowrap;
     }
 
@@ -247,15 +287,36 @@
     label.field textarea{ min-height:92px; resize:vertical; }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
+    .leaflet-popup-content-wrapper{
+      background:var(--panel);
+      color:var(--text);
+      border:2px solid var(--green2);
+      border-radius:12px;
+      box-shadow:0 14px 45px rgba(0,0,0,.45);
+    }
+    .leaflet-popup-tip{
+      background:var(--panel);
+      border:1px solid var(--green2);
+    }
+    .leaflet-popup-content{
+      margin:12px;
+    }
+    .leaflet-container a.leaflet-popup-close-button{
+      color:var(--muted);
+    }
+    .leaflet-container a.leaflet-popup-close-button:hover{
+      color:var(--green);
+    }
     .popup{
       min-width:220px;
-      color:#111;
+      color:var(--text);
     }
     .popup h3{
       margin:0 0 8px;
       font-size:16px;
+      color:var(--green);
     }
-    .popup p{ margin:5px 0; }
+    .popup p{ margin:5px 0; color:var(--text); }
     .popup .type-pill{
       display:inline-block;
       padding:3px 7px;
@@ -271,11 +332,17 @@
       gap:6px;
     }
     .popup-actions button{
-      border:0;
+      border:1px solid var(--border);
       border-radius:6px;
       padding:5px 8px;
       cursor:pointer;
       font-weight:700;
+      background:var(--panel2);
+      color:var(--text);
+    }
+    .popup-actions button:hover{
+      border-color:var(--green);
+      color:var(--green);
     }
 
     #status{
@@ -314,7 +381,7 @@
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the network password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v1.8</span></p>
+      <p class="login-version">Version <span id="loginVersion">v1.9</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -327,13 +394,20 @@
       <span>Underground Intelligence Map</span>
     </div>
 
-    <div class="control-group">
+    <div id="editControls" class="control-group">
       <label class="check"><input id="addMode" type="checkbox"> Add</label>
       <label class="check"><input id="editMode" type="checkbox"> Edit</label>
     </div>
 
     <button id="exportBtn" class="btn">Export</button>
     <button id="lockBtn" class="btn ghost">Lock</button>
+
+    <div id="settings">
+      <button id="settingsBtn" class="btn">⚙ Settings</button>
+      <div id="settingsMenu">
+        <button id="unlockEditingBtn" type="button">Unlock editing</button>
+      </div>
+    </div>
 
     <div id="hint">Locked</div>
   </div>
@@ -346,7 +420,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v1.8</div>
+  <div id="version">v1.9</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -403,8 +477,9 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v1.8";
+    const APP_VERSION = "v1.9";
     const NETWORK_PASSWORD = "1";
+    const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
 
     // PASTE YOUR NEW NOMAD NETWORK FIREBASE CONFIG HERE.
@@ -425,6 +500,7 @@
     let app, auth, db, markersCol;
     let map, imageBounds;
     let unlocked = false;
+    let editingUnlocked = false;
     let pendingLatLng = null;
     let editingId = null;
     let currentIconSize = 22;
@@ -432,12 +508,12 @@
     const MARKER_TYPES = [
       { id:"public_garage", label:"Public Garage", icon:"garage-public.png", named:true },
       { id:"hidden_garage", label:"Hidden Garage", icon:"garage-hidden.png", named:true },
-      { id:"misc", label:"Misc", icon:"misc.png", named:true },
       { id:"gun_truck", label:"Gun Truck", icon:"gun-truck.png", named:false },
       { id:"crates", label:"Crates", icon:"crates.png", named:false },
       { id:"commercial_containers", label:"Commercial Containers", icon:"commercial-containers.png", named:false },
       { id:"chemistry_merchant", label:"Chemistry Set Merchant", icon:"chemistry-merchant.png", named:false },
-      { id:"russian", label:"The Russian", icon:"russian.png", named:false }
+      { id:"russian", label:"The Russian", icon:"russian.png", named:false },
+      { id:"misc", label:"Misc", icon:"misc.png", named:true }
     ];
     const MARKER_TYPE_MAP = Object.fromEntries(MARKER_TYPES.map(t => [t.id, t]));
     const visibleTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, true]));
@@ -455,9 +531,13 @@
     const loginMsg = $("loginMsg");
     const addMode = $("addMode");
     const editMode = $("editMode");
+    const editControls = $("editControls");
     const sidebarTypes = $("sidebarTypes");
     const exportBtn = $("exportBtn");
     const lockBtn = $("lockBtn");
+    const settingsBtn = $("settingsBtn");
+    const settingsMenu = $("settingsMenu");
+    const unlockEditingBtn = $("unlockEditingBtn");
     const hint = $("hint");
     const status = $("status");
     const versionBadge = $("version");
@@ -531,7 +611,7 @@
       onAuthStateChanged(auth, (user) => {
         if (user && unlocked) {
           loginGate.style.display = "none";
-          setHint("Unlocked");
+          setHint("Viewer mode");
           startFirestoreListener();
         }
       });
@@ -569,7 +649,7 @@
         });
 
         map.on("click", (e) => {
-          if (!unlocked || !addMode.checked) return;
+          if (!editingUnlocked || !addMode.checked) return;
           openAddModal(e.latlng);
         });
 
@@ -630,7 +710,7 @@
       if (!marker) {
         marker = L.marker([data.y, data.x], {
           icon: iconFor(data.type),
-          draggable: unlocked && editMode.checked
+          draggable: editingUnlocked && editMode.checked
         });
 
         marker.on("dragend", async () => {
@@ -686,7 +766,7 @@
     function popupHtml(data){
       const notes = data.notes ? `<p>${escapeHtml(data.notes)}</p>` : "";
       const last = data.lastChecked ? `<p><strong>Last checked:</strong> ${escapeHtml(data.lastChecked)}</p>` : "";
-      const actions = unlocked ? `
+      const actions = editingUnlocked ? `
         <div class="popup-actions">
           <button data-edit="${escapeHtml(data.id)}">Edit</button>
         </div>` : "";
@@ -713,7 +793,7 @@
     function setMarkerDraggable(marker){
       if (!marker || !marker.dragging) return;
 
-      if (unlocked && editMode.checked) {
+      if (editingUnlocked && editMode.checked) {
         marker.dragging.enable();
       } else {
         marker.dragging.disable();
@@ -724,7 +804,7 @@
       leafletMarkers.forEach((marker) => {
         setMarkerDraggable(marker);
       });
-      setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : "Unlocked"));
+      setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : (editingUnlocked ? "Editing unlocked" : "Viewer mode"));
     }
 
     function applyLayerVisibility(){
@@ -771,14 +851,6 @@
         const top = document.createElement("div");
         top.className = "type-top";
 
-        const toggle = document.createElement("button");
-        toggle.type = "button";
-        toggle.className = "type-toggle";
-
-        const arrow = document.createElement("span");
-        arrow.className = "type-arrow";
-        arrow.textContent = expandedTypes[t.id] ? "▾" : "▸";
-
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = visibleTypes[t.id] !== false;
@@ -788,48 +860,70 @@
           applyLayerVisibility();
         });
 
-        const name = document.createElement("span");
-        name.textContent = t.label;
-
-        toggle.appendChild(arrow);
-        toggle.appendChild(cb);
-        toggle.appendChild(name);
-
-        toggle.addEventListener("click", () => {
-          expandedTypes[t.id] = !expandedTypes[t.id];
-          updateSidebar();
-        });
-
         const count = document.createElement("span");
         count.className = "type-count";
         count.textContent = entries.length;
 
-        top.appendChild(toggle);
+        if (t.named) {
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "type-toggle";
+
+          const arrow = document.createElement("span");
+          arrow.className = "type-arrow";
+          arrow.textContent = expandedTypes[t.id] ? "▾" : "▸";
+
+          const name = document.createElement("span");
+          name.textContent = t.label;
+
+          toggle.appendChild(arrow);
+          toggle.appendChild(cb);
+          toggle.appendChild(name);
+
+          toggle.addEventListener("click", () => {
+            expandedTypes[t.id] = !expandedTypes[t.id];
+            updateSidebar();
+          });
+
+          top.appendChild(toggle);
+        } else {
+          const title = document.createElement("label");
+          title.className = "type-title";
+          const name = document.createElement("span");
+          name.textContent = t.label;
+          title.appendChild(cb);
+          title.appendChild(name);
+          top.appendChild(title);
+        }
+
         top.appendChild(count);
         row.appendChild(top);
 
-        const list = document.createElement("div");
-        list.className = "marker-list";
-        list.style.display = expandedTypes[t.id] ? "grid" : "none";
-        list.style.marginTop = "8px";
+        if (t.named) {
+          const list = document.createElement("div");
+          list.className = "marker-list";
+          list.style.display = expandedTypes[t.id] ? "grid" : "none";
+          list.style.marginTop = "8px";
 
-        if (entries.length === 0) {
-          const empty = document.createElement("div");
-          empty.className = "empty-type";
-          empty.textContent = "No markers yet";
-          list.appendChild(empty);
-        } else {
-          entries.forEach(m => {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "marker-jump";
-            btn.textContent = m.name || "Unnamed Marker";
-            btn.addEventListener("click", () => jumpToMarker(m.id));
-            list.appendChild(btn);
-          });
+          if (entries.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "empty-type";
+            empty.textContent = "No markers yet";
+            list.appendChild(empty);
+          } else {
+            entries.forEach(m => {
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "marker-jump";
+              btn.textContent = m.name || "Unnamed Marker";
+              btn.addEventListener("click", () => jumpToMarker(m.id));
+              list.appendChild(btn);
+            });
+          }
+
+          row.appendChild(list);
         }
 
-        row.appendChild(list);
         sidebarTypes.appendChild(row);
       });
     }
@@ -940,7 +1034,7 @@
         unlocked = true;
         await signInAnonymously(auth);
         loginGate.style.display = "none";
-        setHint("Unlocked");
+        setHint("Viewer mode");
         status.textContent = "Loading markers...";
         startFirestoreListener();
       } catch (error) {
@@ -952,8 +1046,10 @@
 
     async function lock(){
       unlocked = false;
+      editingUnlocked = false;
       addMode.checked = false;
       editMode.checked = false;
+      editControls.classList.remove("show");
       applyEditMode();
       try { await signOut(auth); } catch {}
       loginGate.style.display = "grid";
@@ -972,6 +1068,27 @@
       if (editMode.checked) addMode.checked = false;
       applyEditMode();
     });
+    settingsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      settingsMenu.classList.toggle("show");
+    });
+    document.addEventListener("click", () => settingsMenu.classList.remove("show"));
+    settingsMenu.addEventListener("click", (e) => e.stopPropagation());
+
+    unlockEditingBtn.addEventListener("click", () => {
+      const pw = prompt("Enter editing password:");
+      if (pw !== EDIT_PASSWORD) {
+        alert("Wrong editing password.");
+        return;
+      }
+
+      editingUnlocked = true;
+      editControls.classList.add("show");
+      settingsMenu.classList.remove("show");
+      setHint("Editing unlocked");
+      applyEditMode();
+    });
+
     exportBtn.addEventListener("click", exportMarkers);
     lockBtn.addEventListener("click", lock);
     cancelBtn.addEventListener("click", closeModal);
