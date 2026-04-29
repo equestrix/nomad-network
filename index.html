@@ -118,12 +118,58 @@
       overflow:auto;
       padding:12px;
       backdrop-filter:blur(8px);
+      transition:transform .22s ease;
+    }
+    body.sidebar-collapsed #markerSidebar{
+      transform:translateX(-100%);
+    }
+    body.sidebar-collapsed #sidebarOpenButton{
+      display:block;
+    }
+    body.sidebar-collapsed #map{
+      inset:64px 0 0 0;
+    }
+    .sidebar-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:4px;
     }
     #markerSidebar h2{
-      margin:0 0 4px;
+      margin:0;
       color:var(--green);
       font-size:15px;
       letter-spacing:.05em;
+    }
+    #sidebarToggle,
+    #sidebarOpenButton{
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--text);
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:900;
+    }
+    #sidebarToggle{
+      width:32px;
+      height:28px;
+      display:grid;
+      place-items:center;
+    }
+    #sidebarOpenButton{
+      position:fixed;
+      top:76px;
+      left:10px;
+      z-index:1300;
+      display:none;
+      padding:8px 10px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    #sidebarToggle:hover,
+    #sidebarOpenButton:hover{
+      color:var(--green);
+      border-color:var(--green);
     }
     #markerSidebar .sidebar-note{
       margin:0 0 12px;
@@ -236,6 +282,19 @@
         url("assets/backgrounds/nomad-network-background.png") center center / cover no-repeat,
         #050705;
       overflow:hidden;
+    }
+
+    #loginScreenVersion{
+      position:absolute;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      color:rgba(156,190,124,.86);
+      font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:13px;
+      letter-spacing:.14em;
+      text-shadow:0 2px 8px rgba(0,0,0,.9);
+      z-index:2;
     }
 
     #loginCard{
@@ -447,6 +506,82 @@
       color:var(--green);
     }
 
+    .sidebar-controls{
+      display:grid;
+      gap:8px;
+      margin:10px 0 12px;
+    }
+    .sidebar-control{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--text);
+      font-size:13px;
+      padding:8px 9px;
+      border:1px solid var(--border);
+      background:rgba(18,25,20,.8);
+      border-radius:10px;
+    }
+
+    #loadingOverlay{
+      position:fixed;
+      inset:64px 0 0 315px;
+      z-index:1100;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient(circle at center, rgba(57,211,83,.10), transparent 35%),
+        rgba(5,8,6,.82);
+      backdrop-filter:blur(2px);
+      color:var(--text);
+      text-align:center;
+    }
+    body.sidebar-collapsed #loadingOverlay{
+      inset:64px 0 0 0;
+    }
+    #loadingOverlay.show{
+      display:flex;
+    }
+    .loading-card{
+      border:1px solid rgba(57,211,83,.38);
+      background:rgba(11,15,13,.92);
+      border-radius:16px;
+      padding:22px 28px;
+      box-shadow:0 20px 70px rgba(0,0,0,.48), 0 0 34px rgba(57,211,83,.10);
+      min-width:260px;
+    }
+    .loading-title{
+      color:var(--green);
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      margin-bottom:8px;
+    }
+    .loading-subtitle{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:16px;
+    }
+    .loading-bar{
+      height:6px;
+      border:1px solid var(--border);
+      background:#050806;
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .loading-bar span{
+      display:block;
+      height:100%;
+      width:40%;
+      background:linear-gradient(90deg, transparent, var(--green), transparent);
+      animation:loadingSweep 1.1s linear infinite;
+    }
+    @keyframes loadingSweep{
+      0%{ transform:translateX(-120%); }
+      100%{ transform:translateX(280%); }
+    }
+
     #status{
       position:fixed; left:10px; bottom:10px; z-index:1200;
       background:rgba(11,15,13,.86);
@@ -474,16 +609,20 @@
         width:245px;
       }
       #map{ inset:112px 0 0 245px; }
+      body.sidebar-collapsed #map{ inset:112px 0 0 0; }
+      #loadingOverlay{ inset:112px 0 0 245px; }
+      body.sidebar-collapsed #loadingOverlay{ inset:112px 0 0 0; }
       #hint{ margin-left:0; width:100%; }
     }
   </style>
 </head>
 <body>
   <div id="loginGate">
+    <div id="loginScreenVersion">v2.6</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.5</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.6</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -515,14 +654,29 @@
   </div>
 
   <aside id="markerSidebar">
-    <h2>MARKERS</h2>
+    <div class="sidebar-header">
+      <h2>MARKERS</h2>
+      <button id="sidebarToggle" type="button" title="Collapse sidebar">‹</button>
+    </div>
     <p class="sidebar-note">Turn marker types on/off. Click a named marker to jump to it.</p>
+    <div class="sidebar-controls">
+      <label class="sidebar-control"><input id="hideUnverified" type="checkbox"> Hide unverified markers</label>
+    </div>
     <div id="sidebarTypes"></div>
   </aside>
 
+  <button id="sidebarOpenButton" type="button">☰ Markers</button>
+
   <div id="map"></div>
+  <div id="loadingOverlay">
+    <div class="loading-card">
+      <div class="loading-title">Nomad Network</div>
+      <div class="loading-subtitle">Loading secure map data...</div>
+      <div class="loading-bar"><span></span></div>
+    </div>
+  </div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.5</div>
+  <div id="version">v2.6</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -583,7 +737,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.5";
+    const APP_VERSION = "v2.6";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
@@ -630,6 +784,7 @@
     const MARKER_TYPE_MAP = Object.fromEntries(MARKER_TYPES.map(t => [t.id, t]));
     const visibleTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, true]));
     const expandedTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, false]));
+    let hideUnverifiedOnly = false;
 
     const markerData = new Map();
     const leafletMarkers = new Map();
@@ -645,6 +800,10 @@
     const editMode = $("editMode");
     const editControls = $("editControls");
     const sidebarTypes = $("sidebarTypes");
+    const hideUnverified = $("hideUnverified");
+    const sidebarToggle = $("sidebarToggle");
+    const sidebarOpenButton = $("sidebarOpenButton");
+    const loadingOverlay = $("loadingOverlay");
     const exportBtn = $("exportBtn");
     const lockBtn = $("lockBtn");
     const settingsBtn = $("settingsBtn");
@@ -654,6 +813,7 @@
     const status = $("status");
     const versionBadge = $("version");
     const loginVersion = $("loginVersion");
+    const loginScreenVersion = $("loginScreenVersion");
 
     const markerModal = $("markerModal");
     const modalTitle = $("modalTitle");
@@ -668,6 +828,7 @@
 
     if (versionBadge) versionBadge.textContent = APP_VERSION;
     if (loginVersion) loginVersion.textContent = APP_VERSION;
+    if (loginScreenVersion) loginScreenVersion.textContent = APP_VERSION;
 
     function setHint(text){ hint.textContent = text; }
     function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -744,6 +905,7 @@
 
     function tryLoadMapImage(index){
       if (index >= MAP_IMAGE_CANDIDATES.length) {
+        if (loadingOverlay) loadingOverlay.classList.remove("show");
         status.textContent = "Could not load map image. Check assets/maps/map.jpg";
         return;
       }
@@ -828,8 +990,10 @@
         });
 
         updateSidebar();
+        if (loadingOverlay) loadingOverlay.classList.remove("show");
         status.textContent = `Loaded ${markerData.size} markers`;
       }, (error) => {
+        if (loadingOverlay) loadingOverlay.classList.remove("show");
         status.textContent = "Firestore error";
         console.error(error);
         alert("Firestore error: " + error.message);
@@ -858,7 +1022,7 @@
         });
 
         leafletMarkers.set(data.id, marker);
-        layerFor(data.type).addLayer(marker);
+        syncMarkerLayer(data.id);
       } else {
         const oldData = markerData.get(data.id);
         const oldType = oldData?.type;
@@ -952,8 +1116,29 @@
       setHint(editMode.checked ? "Edit mode on" : (addMode.checked ? "Add mode on" : (editingUnlocked ? "Editing unlocked" : "Viewer mode")));
     }
 
+    function shouldShowMarker(data){
+      return !hideUnverifiedOnly || !!data.verified;
+    }
+
+    function syncMarkerLayer(id){
+      const data = markerData.get(id);
+      const marker = leafletMarkers.get(id);
+      if (!data || !marker) return;
+
+      const layer = layerFor(data.type);
+      const shouldBeInLayer = shouldShowMarker(data);
+
+      if (shouldBeInLayer) {
+        if (!layer.hasLayer(marker)) layer.addLayer(marker);
+      } else {
+        if (layer.hasLayer(marker)) layer.removeLayer(marker);
+      }
+    }
+
     function applyLayerVisibility(){
       if (!map) return;
+
+      leafletMarkers.forEach((marker, id) => syncMarkerLayer(id));
 
       MARKER_TYPES.forEach(t => {
         const layer = layers[t.id];
@@ -988,6 +1173,7 @@
       MARKER_TYPES.forEach(t => {
         const entries = Array.from(markerData.values())
           .filter(m => typeConfig(m.type).id === t.id)
+          .filter(m => !hideUnverifiedOnly || !!m.verified)
           .sort((a,b) => a.name.localeCompare(b.name));
 
         const row = document.createElement("section");
@@ -1182,6 +1368,7 @@
         unlocked = true;
         await signInAnonymously(auth);
         loginGate.style.display = "none";
+        if (loadingOverlay) loadingOverlay.classList.add("show");
         setHint("Viewer mode");
         status.textContent = "Loading markers...";
         startFirestoreListener();
@@ -1200,7 +1387,8 @@
       editControls.classList.remove("show");
       applyEditMode();
       try { await signOut(auth); } catch {}
-      loginGate.style.display = "grid";
+      if (loadingOverlay) loadingOverlay.classList.remove("show");
+      loginGate.style.display = "block";
       passwordInput.value = "";
       passwordInput.focus();
       setHint("Locked");
@@ -1216,6 +1404,22 @@
       if (editMode.checked) addMode.checked = false;
       applyEditMode();
     });
+    hideUnverified.addEventListener("change", () => {
+      hideUnverifiedOnly = hideUnverified.checked;
+      applyLayerVisibility();
+      updateSidebar();
+    });
+
+    sidebarToggle.addEventListener("click", () => {
+      document.body.classList.add("sidebar-collapsed");
+      setTimeout(() => { if (map) map.invalidateSize(); }, 230);
+    });
+
+    sidebarOpenButton.addEventListener("click", () => {
+      document.body.classList.remove("sidebar-collapsed");
+      setTimeout(() => { if (map) map.invalidateSize(); }, 230);
+    });
+
     settingsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       settingsMenu.classList.toggle("show");
