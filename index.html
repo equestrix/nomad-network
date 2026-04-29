@@ -330,7 +330,7 @@
     let unlocked = false;
     let pendingLatLng = null;
     let editingId = null;
-    let currentIconSize = 30;
+    let currentIconSize = 24;
 
     const markerData = new Map();
     const leafletMarkers = new Map();
@@ -430,7 +430,7 @@
         map = L.map("map", {
           crs: L.CRS.Simple,
           minZoom: -2,
-          maxZoom: 1,
+          maxZoom: 5,
           zoomSnap: .25,
           zoomDelta: .25,
           attributionControl:false
@@ -444,7 +444,7 @@
 
         map.on("zoomend", () => {
           const z = map.getZoom();
-          currentIconSize = Math.max(22, Math.min(42, Math.round((z + 3) * 8)));
+        currentIconSize = Math.max(18, Math.min(34, Math.round((z + 3) * 6)));
           leafletMarkers.forEach((marker, id) => {
             const data = markerData.get(id);
             if (data) marker.setIcon(iconFor(data.type));
