@@ -204,10 +204,24 @@
 
     #map{
       position:absolute;
-      inset:64px 0 0 315px;
-      background:#0fa8d2;
+      inset:76px 12px 12px 327px;
+      background-color:#050907;
+      background-image:
+        linear-gradient(rgba(57,211,83,.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57,211,83,.12) 1px, transparent 1px);
+      background-size:40px 40px;
+      border:2px solid var(--green2);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 0 0 1px rgba(57,211,83,.18), 0 0 28px rgba(57,211,83,.12), inset 0 0 24px rgba(0,0,0,.45);
     }
-    .leaflet-container{ background:#0fa8d2; }
+    .leaflet-container{
+      background-color:#050907;
+      background-image:
+        linear-gradient(rgba(57,211,83,.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57,211,83,.12) 1px, transparent 1px);
+      background-size:40px 40px;
+    }
     .leaflet-control-zoom a{ background:#101711; color:var(--text); border-color:var(--border); }
     .leaflet-control-zoom a:hover{ background:#18231b; color:var(--green); }
 
@@ -385,7 +399,7 @@
         top:112px;
         width:245px;
       }
-      #map{ inset:112px 0 0 245px; }
+      #map{ inset:124px 12px 12px 257px; }
       #hint{ margin-left:0; width:100%; }
     }
   </style>
@@ -394,8 +408,8 @@
   <div id="loginGate">
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
-      <p>Enter the network password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.1</span></p>
+      <p>Enter the password to access the network.</p>
+      <p class="login-version">Version <span id="loginVersion">v2.2</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary" style="width:100%">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -434,7 +448,7 @@
 
   <div id="map"></div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.1</div>
+  <div id="version">v2.2</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -495,7 +509,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.1";
+    const APP_VERSION = "v2.2";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const COLLECTION = "nomad_markers";
@@ -654,15 +668,15 @@
 
         map = L.map("map", {
           crs: L.CRS.Simple,
-          minZoom: -2,
+          minZoom: -4,
           maxZoom: 1,
           zoomSnap: .25,
           zoomDelta: .25,
           attributionControl:false
         });
 
-        L.imageOverlay("map.jpg?v=" + Date.now(), imageBounds).addTo(map);
-        map.fitBounds(imageBounds, { padding:[20,20] });
+        L.imageOverlay("map.jpg?v=" + APP_VERSION, imageBounds).addTo(map);
+        map.fitBounds(imageBounds, { padding:[80,80] });
 
         MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
 
@@ -688,7 +702,7 @@
         status.textContent = "Could not load map.jpg";
       };
 
-      img.src = "map.jpg?v=" + Date.now();
+      img.src = "map.jpg?v=" + APP_VERSION;
     }
 
     let listening = false;
