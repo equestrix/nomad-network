@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="stylesheet" type="text/css" href="assets/styles.css">
+        <link href="https://fonts.cdnfonts.com/css/chalet" rel="stylesheet">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title> Let's cook, Jesse </title>
+    </head>
+    <body>
+        <div class="background-image"></div>
+
+        <div id="start-panel" class="blackout-area top-left">
+            <p><span class="text white-text">Press</span> <span class="text-key">E</span> <span class="text white-text">to start cooking</span></p>
+        </div>
+
+        <div id="control-panel" class="blackout-area top-left" hidden>
+            <p><span class="text yellow-text">Quality</span> <span class="text white-text">based on temp control</span></p>
+            <p><span class="text yellow-text">Quantity</span> <span class="text white-text">differs by ingredients</span></p>
+            <p><span class="text yellow-text">Recipes</span> <span class="text white-text">differ based on quality</span></p>
+            <p><span class="text yellow-text">Recipes</span> <span class="text white-text">change each month</span></p>
+            <p><div class="symbol-key">↑</div> <span style="margin-right: -2em" class="text white-text">Increase the temperature (<span id="percentage">35</span>%)</span></p>
+            <p><div class="symbol-key">↓</div> <span style="margin-right: 2.5em" class="text white-text">Decrease the temperature</span></p>
+            <p><div class="text-key">A</div> <span class="text white-text">Add more lithium (<span id="lithium">5</span>)</span></p>
+            <p><div class="text-key">S</div> <span class="text white-text">Add more acetone (<span id="acetone">4</span>)</span></p>
+            <p><div class="text-key">D</div> <span class="text white-text">Add more sulfuric acid (<span id="sulfuric">6</span>)</span></p>
+        </div>
+
+        <div id="blow-panel" class="blackout-area bottom-left" hidden>
+            <p><span class="text white-text">The liquid starts to bubble</span> <span class="text red-text">out</span></p>
+            <p><span class="text red-text">of control</span><span class="text white-text">,</span> <span class="text orange-text">I should probably</span></p>
+            <p><span class="text orange-text">leave</span></p>
+        </div>
+
+
+        <div id="no-items-text" class="response-text" hidden>
+            <p class="text white-text">Add items to start cooking</p>
+        </div>
+
+        <div id="not-responding-text" class="response-text" hidden>
+            <p class="text orange-text">The batch is not responding well to the heat</p>
+        </div>
+
+        <div id="responding-text" class="response-text" hidden>
+            <p class="text green-text">The batch is responding well to the heat</p>
+        </div>
+
+        <div id="shitty-result" class="result-text" hidden>
+            <p class="text white-text">-1 BAKING TRAY</p>
+            <br>
+            <p class="text white-text">+1 CRYSTAL METH TRAY (SHITTY)</p>
+        </div>
+
+        <div id="white-result" class="result-text" hidden>
+            <p class="text white-text">-2 BAKING TRAY</p>
+            <br>
+            <p class="text white-text">+2 CRYSTAL METH TRAY (WHITE)</p>
+        </div>
+
+        <div id="cloudy-result" class="result-text" hidden>
+            <p class="text white-text">-3 BAKING TRAY</p>
+            <br>
+            <p class="text white-text">+3 CRYSTAL METH TRAY (CLOUDY)</p>
+        </div>
+
+        <div id="progress" hidden>
+            <div class="blackout-container">
+                <div class="blackout-area bottom-right">
+                    <table>
+                        <tr>
+                            <td class="text white-text table-cell">Cook Quality</td>
+                            <td id="not-cooking" class="text white-text table-cell">Not Cooking</td>
+                            <td id="terrible-quality" class="text orange-text table-cell">Terrible</td>
+                            <td id="white-quality" class="text blue-text table-cell">White</td>
+                            <td id="cloudy-quality" class="text blue-text table-cell">Cloudy</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="blackout-area bottom-right">
+                    <table><tr><td class="text white-text table-cell">Cook Progress</td><td class="text orange-text table-cell"><div class="progress-bar">
+                        <div class="progress"></div>
+                    </div></td></tr></table>
+                </div>
+            </div>
+        </div>
+
+        <script src="assets/meth.js"></script>
+    </body>
+</html>
