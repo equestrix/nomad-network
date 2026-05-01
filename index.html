@@ -1104,11 +1104,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v3.1.1</div>
+    <div id="loginScreenVersion">v3.1.2</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v3.1.1</span></p>
+      <p class="login-version">Version <span id="loginVersion">v3.1.2</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -1255,7 +1255,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v3.1.1</div>
+  <div id="version">v3.1.2</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -1339,7 +1339,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v3.1.1";
+    const APP_VERSION = "v3.1.2";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -2403,6 +2403,9 @@
     openFavorsMap.addEventListener("click", () => selectNetworkView("favors"));
     openWiki.addEventListener("click", selectWikiView);
     openMinigames.addEventListener("click", selectMinigamesView);
+    document.querySelectorAll(".minigame-link").forEach(btn => {
+      btn.addEventListener("click", () => loadMinigame(btn.dataset.minigame));
+    });
     reloadMinigameBtn.addEventListener("click", () => {
       minigameFrame.src = minigameFrame.src;
     });
