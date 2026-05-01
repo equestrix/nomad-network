@@ -405,6 +405,82 @@
         font-size:16px;
       }
     }
+
+    #homeScreen{
+      position:fixed;
+      inset:0;
+      z-index:2500;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(57,211,83,.12), transparent 32%),
+        linear-gradient(180deg, rgba(5,8,6,.96), rgba(7,10,8,.98));
+      backdrop-filter:blur(6px);
+    }
+    #homeScreen.show{
+      display:flex;
+    }
+    .home-card{
+      width:min(760px, calc(100vw - 40px));
+      border:1px solid rgba(57,211,83,.32);
+      background:rgba(11,15,13,.94);
+      border-radius:22px;
+      box-shadow:0 28px 90px rgba(0,0,0,.55), 0 0 38px rgba(57,211,83,.08);
+      padding:28px;
+      text-align:center;
+    }
+    .home-card h1{
+      margin:0 0 8px;
+      color:var(--green);
+      font-size:clamp(28px, 4vw, 48px);
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .home-card p{
+      margin:0 0 24px;
+      color:var(--muted);
+      letter-spacing:.05em;
+    }
+    .home-options{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+    .home-option{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(24,35,27,.96), rgba(12,18,14,.96));
+      color:var(--text);
+      border-radius:16px;
+      padding:24px 18px;
+      cursor:pointer;
+      text-align:left;
+      min-height:130px;
+      box-shadow:0 12px 32px rgba(0,0,0,.28);
+    }
+    .home-option:hover{
+      border-color:var(--green);
+      box-shadow:0 12px 32px rgba(0,0,0,.32), 0 0 28px rgba(57,211,83,.10);
+      transform:translateY(-1px);
+    }
+    .home-option strong{
+      display:block;
+      color:var(--green);
+      font-size:22px;
+      margin-bottom:8px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .home-option span{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+    @media (max-width:720px){
+      .home-options{ grid-template-columns:1fr; }
+    }
+
     .modal{
       position:fixed; inset:0; z-index:2000;
       display:none; place-items:center;
@@ -447,6 +523,29 @@
     }
     label.field textarea{ min-height:92px; resize:vertical; }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .favor-fields{
+      display:none;
+      gap:12px;
+    }
+    .favor-fields.show{
+      display:grid;
+    }
+    .stars-preview{
+      color:#f0c95a;
+      font-size:20px;
+      letter-spacing:.08em;
+      text-shadow:0 2px 8px rgba(0,0,0,.55);
+    }
+    .favor-stars{
+      color:#f0c95a;
+      letter-spacing:.08em;
+      font-size:18px;
+      text-shadow:0 2px 8px rgba(0,0,0,.45);
+    }
+    .reward-line{
+      border-left:3px solid var(--green2);
+      padding-left:8px;
+    }
 
     .leaflet-popup-content-wrapper{
       background:var(--panel);
@@ -618,14 +717,31 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v2.6</div>
+    <div id="loginScreenVersion">v2.7</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.6</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.7</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
+    </div>
+  </div>
+
+  <div id="homeScreen">
+    <div class="home-card">
+      <h1>Nomad Network</h1>
+      <p>Select a network module.</p>
+      <div class="home-options">
+        <button id="openLosSantosMap" class="home-option" type="button">
+          <strong>Los Santos Map</strong>
+          <span>Garages, merchants, crates, gun trucks, containers, and other map intelligence.</span>
+        </button>
+        <button id="openFavorsMap" class="home-option" type="button">
+          <strong>Favors</strong>
+          <span>Favor locations, star ratings, rewards, verification status, and notes.</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -676,7 +792,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.6</div>
+  <div id="version">v2.7</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -712,6 +828,29 @@
           <input id="markerVerified" type="checkbox"> Verified information
         </label>
 
+        <div id="favorFields" class="favor-fields">
+          <div class="grid2">
+            <label class="field">
+              <span>Stars</span>
+              <select id="favorStars">
+                <option value="1">1 Star</option>
+                <option value="2">2 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="5">5 Stars</option>
+              </select>
+            </label>
+            <div class="field">
+              <span>Preview</span>
+              <div id="favorStarsPreview" class="stars-preview">★☆☆☆☆</div>
+            </div>
+          </div>
+          <label class="field">
+            <span>Rewards</span>
+            <textarea id="favorRewards" placeholder="Example: $1,499, Cocaine Bag, Rep"></textarea>
+          </label>
+        </div>
+
         <label class="field">
           <span>Notes</span>
           <textarea id="markerNotes" placeholder="Useful details, access notes, risk, etc."></textarea>
@@ -737,10 +876,11 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.6";
+    const APP_VERSION = "v2.7";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
-    const COLLECTION = "nomad_markers";
+    const MARKER_COLLECTION = "nomad_markers";
+    const FAVOR_COLLECTION = "nomad_favors";
     const MAP_IMAGE_CANDIDATES = [
       "assets/maps/map.jpg",
       "assets/maps/map.jpeg",
@@ -771,7 +911,7 @@
     let editingId = null;
     let currentIconSize = 22;
 
-    const MARKER_TYPES = [
+    const MAP_MARKER_TYPES = [
       { id:"public_garage", label:"Public Garage", icon:"assets/markers/garage-public.png", named:true },
       { id:"hidden_garage", label:"Hidden Garage", icon:"assets/markers/garage-hidden.png", named:true },
       { id:"gun_truck", label:"Gun Truck", icon:"assets/markers/gun-truck.png", named:false },
@@ -781,18 +921,31 @@
       { id:"russian", label:"The Russian", icon:"assets/markers/russian.png", named:false },
       { id:"misc", label:"Misc", icon:"assets/markers/misc.png", named:true }
     ];
-    const MARKER_TYPE_MAP = Object.fromEntries(MARKER_TYPES.map(t => [t.id, t]));
-    const visibleTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, true]));
-    const expandedTypes = Object.fromEntries(MARKER_TYPES.map(t => [t.id, false]));
+
+    const FAVOR_MARKER_TYPES = [
+      { id:"favor", label:"Favors", icon:"assets/markers/radar_friend.png", named:true, favor:true }
+    ];
+
+    const ALL_MARKER_TYPES = [...MAP_MARKER_TYPES, ...FAVOR_MARKER_TYPES];
+
+    const MARKER_TYPE_MAP = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, t]));
+    const visibleTypes = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, true]));
+    const expandedTypes = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, false]));
     let hideUnverifiedOnly = false;
+    let currentView = null;
+    let currentCollectionName = MARKER_COLLECTION;
+    let unsubscribeMarkers = null;
 
     const markerData = new Map();
     const leafletMarkers = new Map();
-    const layers = Object.fromEntries(MARKER_TYPES.map(t => [t.id, L.layerGroup()]));
+    const layers = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, L.layerGroup()]));
 
     const $ = (id) => document.getElementById(id);
 
     const loginGate = $("loginGate");
+    const homeScreen = $("homeScreen");
+    const openLosSantosMap = $("openLosSantosMap");
+    const openFavorsMap = $("openFavorsMap");
     const passwordInput = $("passwordInput");
     const loginBtn = $("loginBtn");
     const loginMsg = $("loginMsg");
@@ -822,6 +975,10 @@
     const markerLastChecked = $("markerLastChecked");
     const markerVerified = $("markerVerified");
     const markerNotes = $("markerNotes");
+    const favorFields = $("favorFields");
+    const favorStars = $("favorStars");
+    const favorStarsPreview = $("favorStarsPreview");
+    const favorRewards = $("favorRewards");
     const deleteBtn = $("deleteBtn");
     const cancelBtn = $("cancelBtn");
     const saveBtn = $("saveBtn");
@@ -832,6 +989,19 @@
 
     function setHint(text){ hint.textContent = text; }
     function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+    function currentMarkerTypes(){
+      return currentView === "favors" ? FAVOR_MARKER_TYPES : MAP_MARKER_TYPES;
+    }
+
+    function isFavorType(type){
+      return typeConfig(type).favor === true;
+    }
+
+    function starsText(value){
+      const count = Math.max(1, Math.min(5, Number(value) || 1));
+      return "★".repeat(count) + "☆".repeat(5 - count);
+    }
 
     function typeConfig(type){
       return MARKER_TYPE_MAP[type] || MARKER_TYPE_MAP.public_garage;
@@ -851,6 +1021,23 @@
 
     function verifiedLabel(value){
       return value ? "Verified" : "Unverified";
+    }
+
+    function populateMarkerTypeOptions(){
+      markerType.innerHTML = "";
+      currentMarkerTypes().forEach(t => {
+        const option = document.createElement("option");
+        option.value = t.id;
+        option.textContent = t.label;
+        markerType.appendChild(option);
+      });
+    }
+
+    function updateFavorFields(){
+      const isFavor = isFavorType(markerType.value);
+      favorFields.classList.toggle("show", isFavor);
+      favorStarsPreview.textContent = starsText(favorStars.value);
+      markerName.placeholder = isFavor ? "Favor name" : "Required for garages and misc only";
     }
 
     function iconFor(type){
@@ -888,7 +1075,7 @@
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
-      markersCol = collection(db, COLLECTION);
+      markersCol = collection(db, currentCollectionName);
 
       onAuthStateChanged(auth, (user) => {
         if (user && unlocked) {
@@ -932,7 +1119,7 @@
         L.imageOverlay(versionedMapPath, imageBounds).addTo(map);
         map.fitBounds(imageBounds, { padding:[80,80] });
 
-        MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
+        ALL_ALL_MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
 
         map.on("zoomend", () => {
           const z = map.getZoom();
@@ -960,11 +1147,51 @@
     }
 
     let listening = false;
-    function startFirestoreListener(){
-      if (listening) return;
-      listening = true;
+    function clearAllMarkers(){
+      leafletMarkers.forEach((marker, id) => {
+        const data = markerData.get(id);
+        if (data) layerFor(data.type).removeLayer(marker);
+      });
+      markerData.clear();
+      leafletMarkers.clear();
+      updateSidebar();
+    }
 
-      onSnapshot(markersCol, (snapshot) => {
+    function selectNetworkView(view){
+      currentView = view;
+      currentCollectionName = view === "favors" ? FAVOR_COLLECTION : MARKER_COLLECTION;
+
+      clearAllMarkers();
+      populateMarkerTypeOptions();
+      updateFavorFields();
+
+      if (view === "favors") {
+        setHint("Favors map");
+        status.textContent = "Loading favors...";
+      } else {
+        setHint("Los Santos map");
+        status.textContent = "Loading markers...";
+      }
+
+      homeScreen.classList.remove("show");
+      if (loadingOverlay) loadingOverlay.classList.add("show");
+      startFirestoreListener();
+      applyLayerVisibility();
+
+      if (map) {
+        setTimeout(() => map.invalidateSize(), 100);
+      }
+    }
+
+    function startFirestoreListener(){
+      if (unsubscribeMarkers) {
+        unsubscribeMarkers();
+        unsubscribeMarkers = null;
+      }
+
+      markersCol = collection(db, currentCollectionName);
+
+      unsubscribeMarkers = onSnapshot(markersCol, (snapshot) => {
         snapshot.docChanges().forEach(change => {
           const id = change.doc.id;
 
@@ -976,13 +1203,15 @@
           const v = change.doc.data() || {};
           const data = {
             id,
-            name: v.name || "Unnamed Marker",
-            type: v.type || "public_garage",
+            name: v.name || (currentView === "favors" ? "Unnamed Favor" : "Unnamed Marker"),
+            type: v.type || (currentView === "favors" ? "favor" : "public_garage"),
             x: Number(v.x),
             y: Number(v.y),
             notes: v.notes || "",
             lastChecked: v.lastChecked || "",
             verified: !!v.verified,
+            stars: Number(v.stars || 1),
+            rewards: v.rewards || "",
           };
 
           if (!Number.isFinite(data.x) || !Number.isFinite(data.y)) return;
@@ -991,7 +1220,7 @@
 
         updateSidebar();
         if (loadingOverlay) loadingOverlay.classList.remove("show");
-        status.textContent = `Loaded ${markerData.size} markers`;
+        status.textContent = `Loaded ${markerData.size} ${currentView === "favors" ? "favors" : "markers"}`;
       }, (error) => {
         if (loadingOverlay) loadingOverlay.classList.remove("show");
         status.textContent = "Firestore error";
@@ -1012,9 +1241,9 @@
         });
 
         marker.on("dragend", async () => {
-          if (!unlocked || !editMode.checked) return;
+          if (!editingUnlocked || !editMode.checked) return;
           const pos = marker.getLatLng();
-          await updateDoc(doc(db, COLLECTION, data.id), {
+          await updateDoc(doc(db, currentCollectionName, data.id), {
             x: pos.lng,
             y: pos.lat,
             updatedAt: serverTimestamp()
@@ -1064,13 +1293,27 @@
     function popupHtml(data){
       const notes = data.notes ? `<p>${escapeHtml(data.notes)}</p>` : "";
       const status = `<p><strong>Status:</strong> ${escapeHtml(verifiedLabel(data.verified))}</p>`;
-      const typeLine = nameRequiredFor(data.type)
-        ? `<p><span class="type-pill">${escapeHtml(typeLabel(data.type))}</span></p>`
-        : "";
       const actions = editingUnlocked ? `
         <div class="popup-actions">
           <button data-edit="${escapeHtml(data.id)}">Edit</button>
         </div>` : "";
+
+      if (isFavorType(data.type)) {
+        const rewards = data.rewards ? `<p class="reward-line"><strong>Rewards:</strong><br>${escapeHtml(data.rewards).replace(/\n/g, "<br>")}</p>` : "";
+        return `
+          <div class="popup">
+            <h3>${escapeHtml(data.name || "Favor")}</h3>
+            <p class="favor-stars">${starsText(data.stars)}</p>
+            ${status}
+            ${rewards}
+            ${notes}
+            ${actions}
+          </div>`;
+      }
+
+      const typeLine = nameRequiredFor(data.type)
+        ? `<p><span class="type-pill">${escapeHtml(typeLabel(data.type))}</span></p>`
+        : "";
 
       return `
         <div class="popup">
@@ -1140,7 +1383,7 @@
 
       leafletMarkers.forEach((marker, id) => syncMarkerLayer(id));
 
-      MARKER_TYPES.forEach(t => {
+      currentMarkerTypes().forEach(t => {
         const layer = layers[t.id];
         if (!layer) return;
 
@@ -1170,7 +1413,7 @@
 
       sidebarTypes.innerHTML = "";
 
-      MARKER_TYPES.forEach(t => {
+      currentMarkerTypes().forEach(t => {
         const entries = Array.from(markerData.values())
           .filter(m => typeConfig(m.type).id === t.id)
           .filter(m => !hideUnverifiedOnly || !!m.verified)
@@ -1264,10 +1507,13 @@
       editingId = null;
       modalTitle.textContent = "Add Marker";
       markerName.value = "";
-      markerType.value = "public_garage";
+      markerType.value = currentView === "favors" ? "favor" : "public_garage";
       markerLastChecked.value = todayISO();
       markerVerified.checked = false;
+      favorStars.value = "1";
+      favorRewards.value = "";
       markerNotes.value = "";
+      updateFavorFields();
       deleteBtn.style.display = "none";
       markerModal.classList.add("show");
       markerName.focus();
@@ -1281,10 +1527,13 @@
       editingId = id;
       modalTitle.textContent = "Edit Marker";
       markerName.value = data.name || "";
-      markerType.value = data.type || "public_garage";
+      markerType.value = data.type || (currentView === "favors" ? "favor" : "public_garage");
       markerLastChecked.value = data.lastChecked || "";
       markerVerified.checked = !!data.verified;
+      favorStars.value = String(data.stars || 1);
+      favorRewards.value = data.rewards || "";
       markerNotes.value = data.notes || "";
+      updateFavorFields();
       deleteBtn.style.display = "";
       markerModal.classList.add("show");
       markerName.focus();
@@ -1302,6 +1551,8 @@
       const notes = markerNotes.value.trim();
       const lastChecked = markerLastChecked.value;
       const verified = markerVerified.checked;
+      const stars = Number(favorStars.value || 1);
+      const rewards = favorRewards.value.trim();
 
       if (!name && nameRequiredFor(type)) {
         alert("Name is required for garages and misc markers.");
@@ -1313,14 +1564,14 @@
       }
 
       if (editingId) {
-        await updateDoc(doc(db, COLLECTION, editingId), {
-          name, type, notes, lastChecked, verified,
+        await updateDoc(doc(db, currentCollectionName, editingId), {
+          name, type, notes, lastChecked, verified, stars, rewards,
           updatedAt: serverTimestamp()
         });
       } else {
         if (!pendingLatLng) return;
         await addDoc(markersCol, {
-          name, type, notes, lastChecked, verified,
+          name, type, notes, lastChecked, verified, stars, rewards,
           x: pendingLatLng.lng,
           y: pendingLatLng.lat,
           createdAt: serverTimestamp(),
@@ -1336,20 +1587,20 @@
       const data = markerData.get(editingId);
       if (!confirm(`Delete "${data?.name || "this marker"}"?`)) return;
 
-      await deleteDoc(doc(db, COLLECTION, editingId));
+      await deleteDoc(doc(db, currentCollectionName, editingId));
       closeModal();
     }
 
     function exportMarkers(){
       const arr = Array.from(markerData.values())
         .sort((a,b) => a.name.localeCompare(b.name))
-        .map(({id, name, type, x, y, notes, lastChecked, verified}) => ({id, name, type, x, y, notes, lastChecked, verified}));
+        .map(({id, name, type, x, y, notes, lastChecked, verified, stars, rewards}) => ({id, name, type, x, y, notes, lastChecked, verified, stars, rewards}));
 
       const blob = new Blob([JSON.stringify(arr, null, 2)], { type:"application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "nomad-markers.json";
+      a.download = currentView === "favors" ? "nomad-favors.json" : "nomad-markers.json";
       document.body.appendChild(a);
       a.click();
       URL.revokeObjectURL(url);
@@ -1368,10 +1619,9 @@
         unlocked = true;
         await signInAnonymously(auth);
         loginGate.style.display = "none";
-        if (loadingOverlay) loadingOverlay.classList.add("show");
-        setHint("Viewer mode");
-        status.textContent = "Loading markers...";
-        startFirestoreListener();
+        homeScreen.classList.add("show");
+        setHint("Select a module");
+        status.textContent = "Ready";
       } catch (error) {
         unlocked = false;
         loginMsg.textContent = "Firebase anonymous sign-in failed. Enable Anonymous Auth in Firebase.";
@@ -1388,6 +1638,13 @@
       applyEditMode();
       try { await signOut(auth); } catch {}
       if (loadingOverlay) loadingOverlay.classList.remove("show");
+      if (unsubscribeMarkers) {
+        unsubscribeMarkers();
+        unsubscribeMarkers = null;
+      }
+      clearAllMarkers();
+      homeScreen.classList.remove("show");
+      currentView = null;
       loginGate.style.display = "block";
       passwordInput.value = "";
       passwordInput.focus();
@@ -1395,6 +1652,8 @@
     }
 
     loginBtn.addEventListener("click", unlock);
+    openLosSantosMap.addEventListener("click", () => selectNetworkView("map"));
+    openFavorsMap.addEventListener("click", () => selectNetworkView("favors"));
     passwordInput.addEventListener("keydown", (e) => { if (e.key === "Enter") unlock(); });
     addMode.addEventListener("change", () => {
       if (addMode.checked) editMode.checked = false;
@@ -1448,11 +1707,17 @@
     deleteBtn.addEventListener("click", () => deleteCurrentMarker().catch(err => alert("Delete failed: " + err.message)));
     markerType.addEventListener("change", () => {
       const required = nameRequiredFor(markerType.value);
-      markerName.placeholder = required ? "Required for garages and misc only" : `Optional — defaults to ${typeLabel(markerType.value)}`;
+      markerName.placeholder = isFavorType(markerType.value) ? "Favor name" : (required ? "Required for garages and misc only" : `Optional — defaults to ${typeLabel(markerType.value)}`);
+      updateFavorFields();
+    });
+    favorStars.addEventListener("change", () => {
+      favorStarsPreview.textContent = starsText(favorStars.value);
     });
     markerModal.addEventListener("click", (e) => { if (e.target === markerModal) closeModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
+    populateMarkerTypeOptions();
+    updateFavorFields();
     initMap();
     initFirebase();
   </script>
