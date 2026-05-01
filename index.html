@@ -717,11 +717,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v2.7</div>
+    <div id="loginScreenVersion">v2.7.2</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.7</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.7.2</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -756,6 +756,7 @@
       <label class="check"><input id="editMode" type="checkbox"> Edit</label>
     </div>
 
+    <button id="mainMenuBtn" class="btn ghost">Main Menu</button>
     <button id="exportBtn" class="btn">Export</button>
     <button id="lockBtn" class="btn ghost">Lock</button>
 
@@ -792,7 +793,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.7</div>
+  <div id="version">v2.7.2</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -876,7 +877,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.7";
+    const APP_VERSION = "v2.7.2";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -957,6 +958,7 @@
     const sidebarToggle = $("sidebarToggle");
     const sidebarOpenButton = $("sidebarOpenButton");
     const loadingOverlay = $("loadingOverlay");
+    const mainMenuBtn = $("mainMenuBtn");
     const exportBtn = $("exportBtn");
     const lockBtn = $("lockBtn");
     const settingsBtn = $("settingsBtn");
@@ -1119,7 +1121,7 @@
         L.imageOverlay(versionedMapPath, imageBounds).addTo(map);
         map.fitBounds(imageBounds, { padding:[80,80] });
 
-        ALL_ALL_MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
+        ALL_MARKER_TYPES.forEach(t => layers[t.id].addTo(map));
 
         map.on("zoomend", () => {
           const z = map.getZoom();
@@ -1181,6 +1183,23 @@
       if (map) {
         setTimeout(() => map.invalidateSize(), 100);
       }
+    }
+
+    function returnToMainMenu(){
+      if (!unlocked) return;
+
+      if (unsubscribeMarkers) {
+        unsubscribeMarkers();
+        unsubscribeMarkers = null;
+      }
+
+      clearAllMarkers();
+      closeModal();
+      if (loadingOverlay) loadingOverlay.classList.remove("show");
+      currentView = null;
+      homeScreen.classList.add("show");
+      setHint("Select a module");
+      status.textContent = "Ready";
     }
 
     function startFirestoreListener(){
@@ -1700,6 +1719,7 @@
       applyEditMode();
     });
 
+    mainMenuBtn.addEventListener("click", returnToMainMenu);
     exportBtn.addEventListener("click", exportMarkers);
     lockBtn.addEventListener("click", lock);
     cancelBtn.addEventListener("click", closeModal);
