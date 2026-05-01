@@ -835,6 +835,7 @@
       border:0;
       display:block;
       background:#050705;
+      transform-origin: top left;
     }
     .minigame-note{
       position:absolute;
@@ -1104,11 +1105,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v3.1.2</div>
+    <div id="loginScreenVersion">v3.1.4</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v3.1.2</span></p>
+      <p class="login-version">Version <span id="loginVersion">v3.1.4</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -1202,7 +1203,7 @@
 
       <div id="minigameFrameWrap">
         <iframe id="minigameFrame" title="Minigame" src="assets/minigames/meth/"></iframe>
-        <div class="minigame-note">Click inside the minigame, then press E to start.</div>
+        <div id="minigameNote" class="minigame-note">Click inside the minigame, then press E to start.</div>
       </div>
     </section>
   </div>
@@ -1255,7 +1256,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v3.1.2</div>
+  <div id="version">v3.1.4</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -1339,7 +1340,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v3.1.2";
+    const APP_VERSION = "v3.1.4";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -1355,12 +1356,16 @@
       meth: {
         title: "Meth Cook",
         subtitle: "Practice the meth cooking minigame. Click inside the game window before using keys.",
-        path: "assets/minigames/meth/"
+        path: "assets/minigames/meth/",
+        note: "Click inside the minigame, then press E to start.",
+        scale: 1
       },
       voltageRegulator: {
         title: "Voltage Regulator",
         subtitle: "Practice the voltage regulator minigame. Click inside the game window before using keys.",
-        path: "assets/minigames/voltage-regulator/"
+        path: "assets/minigames/voltage-regulator/",
+        note: "Click to start, press Reload to start over.",
+        scale: 0.8
       }
     };
 
@@ -1429,6 +1434,7 @@
     const openMinigameNewTab = $("openMinigameNewTab");
     const minigameTitle = $("minigameTitle");
     const minigameSubtitle = $("minigameSubtitle");
+    const minigameNote = $("minigameNote");
     const wikiScreen = $("wikiScreen");
     const wikiModuleMenu = $("wikiModuleMenu");
     const wikiReader = $("wikiReader");
@@ -1854,6 +1860,12 @@
       minigameSubtitle.textContent = game.subtitle;
       minigameFrame.src = game.path;
       openMinigameNewTab.href = game.path;
+      minigameNote.textContent = game.note || "Click inside the minigame before using keys.";
+
+      const scale = Number(game.scale) || 1;
+      minigameFrame.style.transform = `scale(${scale})`;
+      minigameFrame.style.width = `${100 / scale}%`;
+      minigameFrame.style.height = `${100 / scale}%`;
 
       document.querySelectorAll(".minigame-link").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.minigame === key);
