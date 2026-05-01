@@ -1104,11 +1104,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v3.0</div>
+    <div id="loginScreenVersion">v3.1</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v3.0</span></p>
+      <p class="login-version">Version <span id="loginVersion">v3.1</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -1184,7 +1184,8 @@
   <div id="minigamesScreen">
     <nav id="minigameNav">
       <h2>Minigames</h2>
-      <button id="openMethMinigame" class="minigame-link active" type="button">Meth Cook</button>
+      <button class="minigame-link active" data-minigame="meth" type="button">Meth Cook</button>
+      <button class="minigame-link" data-minigame="voltageRegulator" type="button">Voltage Regulator</button>
     </nav>
 
     <section id="minigamePanel">
@@ -1195,12 +1196,12 @@
         </div>
         <div class="minigame-actions">
           <button id="reloadMinigameBtn" class="btn" type="button">Reload</button>
-          <a id="openMinigameNewTab" class="btn ghost" href="minigames/meth/" target="_blank" rel="noopener">Open New Tab</a>
+          <a id="openMinigameNewTab" class="btn ghost" href="assets/minigames/meth/" target="_blank" rel="noopener">Open New Tab</a>
         </div>
       </header>
 
       <div id="minigameFrameWrap">
-        <iframe id="minigameFrame" title="Meth Cook Minigame" src="minigames/meth/"></iframe>
+        <iframe id="minigameFrame" title="Minigame" src="assets/minigames/meth/"></iframe>
         <div class="minigame-note">Click inside the minigame, then press E to start.</div>
       </div>
     </section>
@@ -1254,7 +1255,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v3.0</div>
+  <div id="version">v3.1</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -1338,7 +1339,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v3.0";
+    const APP_VERSION = "v3.1";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -1350,7 +1351,18 @@
       "assets/maps/map.png",
       "map.jpg"
     ];
-    const METH_MINIGAME_PATH = "assets/minigames/meth/";
+    const MINIGAMES = {
+      meth: {
+        title: "Meth Cook",
+        subtitle: "Practice the meth cooking minigame. Click inside the game window before using keys.",
+        path: "assets/minigames/meth/"
+      },
+      voltageRegulator: {
+        title: "Voltage Regulator",
+        subtitle: "Practice the voltage regulator minigame. Click inside the game window before using keys.",
+        path: "assets/minigames/voltage-regulator/"
+      }
+    };
 
     // PASTE YOUR NEW NOMAD NETWORK FIREBASE CONFIG HERE.
     // Firebase Console → Project settings → Your apps → Web app config
@@ -1414,8 +1426,9 @@
     const openMinigames = $("openMinigames");
     const minigameFrame = $("minigameFrame");
     const reloadMinigameBtn = $("reloadMinigameBtn");
-    const openMethMinigame = $("openMethMinigame");
     const openMinigameNewTab = $("openMinigameNewTab");
+    const minigameTitle = $("minigameTitle");
+    const minigameSubtitle = $("minigameSubtitle");
     const wikiScreen = $("wikiScreen");
     const wikiModuleMenu = $("wikiModuleMenu");
     const wikiReader = $("wikiReader");
@@ -1835,6 +1848,18 @@
       }
     }
 
+    function loadMinigame(key){
+      const game = MINIGAMES[key] || MINIGAMES.meth;
+      minigameTitle.textContent = game.title;
+      minigameSubtitle.textContent = game.subtitle;
+      minigameFrame.src = game.path;
+      openMinigameNewTab.href = game.path;
+
+      document.querySelectorAll(".minigame-link").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.minigame === key);
+      });
+    }
+
     function selectMinigamesView(){
       currentView = "minigames";
 
@@ -1853,8 +1878,7 @@
       setHint("Minigames");
       status.textContent = "Minigames";
 
-      minigameFrame.src = METH_MINIGAME_PATH;
-      openMinigameNewTab.href = METH_MINIGAME_PATH;
+      loadMinigame("meth");
     }
 
     function selectWikiView(){
@@ -2380,8 +2404,7 @@
     openWiki.addEventListener("click", selectWikiView);
     openMinigames.addEventListener("click", selectMinigamesView);
     openMethMinigame.addEventListener("click", () => {
-      minigameFrame.src = METH_MINIGAME_PATH;
-      openMinigameNewTab.href = METH_MINIGAME_PATH;
+      loadMinigame("meth");
     });
     reloadMinigameBtn.addEventListener("click", () => {
       minigameFrame.src = minigameFrame.src;
