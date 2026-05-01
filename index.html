@@ -58,6 +58,8 @@
     .btn.danger{ background:#3a1616; border-color:#7c2b2b; color:#ffd5d5; }
     .btn.ghost{ background:transparent; }
     .btn:disabled{ opacity:.45; cursor:not-allowed; }
+    #exportBtn{ display:none; }
+    body.editing-unlocked #exportBtn{ display:inline-block; }
 
     #editControls{
       display:none;
@@ -481,6 +483,259 @@
       .home-options{ grid-template-columns:1fr; }
     }
 
+
+
+    #wikiScreen{
+      position:fixed;
+      inset:64px 0 0 0;
+      z-index:1150;
+      display:none;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(57,211,83,.08), transparent 28%),
+        linear-gradient(180deg, rgba(5,8,6,.98), rgba(7,10,8,.99));
+      color:var(--text);
+      overflow:hidden;
+    }
+    body.module-wiki #wikiScreen{ display:block; }
+    body.module-wiki #markerSidebar,
+    body.module-wiki #sidebarOpenButton,
+    body.module-wiki #map,
+    body.module-wiki #loadingOverlay,
+    body.module-wiki #status{
+      display:none !important;
+    }
+
+    #wikiModuleMenu{
+      display:none;
+      height:100%;
+      overflow:auto;
+      padding:28px;
+    }
+    #wikiModuleMenu.show{ display:block; }
+    .wiki-module-shell{
+      max-width:1180px;
+      margin:0 auto;
+    }
+    .wiki-module-shell h1{
+      margin:0 0 8px;
+      color:var(--green);
+      font-size:clamp(32px, 4vw, 56px);
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .wiki-module-shell p{
+      margin:0 0 24px;
+      color:var(--muted);
+    }
+    .wiki-module-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+      gap:18px;
+    }
+    .wiki-module-card{
+      min-height:260px;
+      display:flex;
+      align-items:flex-end;
+      text-align:left;
+      border:1px solid var(--border);
+      border-radius:20px;
+      overflow:hidden;
+      cursor:pointer;
+      position:relative;
+      background:#080c09;
+      box-shadow:0 18px 46px rgba(0,0,0,.28);
+    }
+    .wiki-module-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:var(--module-image, linear-gradient(135deg, rgba(57,211,83,.16), rgba(0,0,0,.15))) center / cover no-repeat;
+      opacity:.68;
+      transition:transform .22s ease, opacity .22s ease;
+    }
+    .wiki-module-card::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.82));
+    }
+    .wiki-module-card:hover{
+      border-color:var(--green);
+      box-shadow:0 18px 46px rgba(0,0,0,.32), 0 0 30px rgba(57,211,83,.10);
+    }
+    .wiki-module-card:hover::before{
+      transform:scale(1.04);
+      opacity:.82;
+    }
+    .wiki-module-content{
+      position:relative;
+      z-index:1;
+      padding:20px;
+    }
+    .wiki-module-content strong{
+      display:block;
+      color:var(--green);
+      font-size:28px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      margin-bottom:8px;
+    }
+    .wiki-module-content span{
+      color:var(--text);
+      line-height:1.45;
+    }
+
+    #wikiReader{
+      height:100%;
+      display:none;
+      grid-template-columns:300px 1fr;
+      overflow:hidden;
+    }
+    #wikiReader.show{ display:grid; }
+    #wikiNav{
+      border-right:1px solid var(--border);
+      background:rgba(11,15,13,.96);
+      padding:14px;
+      overflow:auto;
+    }
+    #wikiNav h2{
+      margin:0 0 10px;
+      color:var(--green);
+      font-size:16px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .wiki-back{
+      width:100%;
+      margin-bottom:12px;
+      justify-content:center;
+    }
+    .wiki-section-title{
+      color:var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      margin:14px 0 8px;
+    }
+    .wiki-link{
+      width:100%;
+      display:block;
+      text-align:left;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--text);
+      padding:9px 10px;
+      border-radius:9px;
+      cursor:pointer;
+      font-weight:700;
+      margin-bottom:5px;
+    }
+    .wiki-link:hover,
+    .wiki-link.active{
+      border-color:var(--green2);
+      background:var(--panel2);
+      color:var(--green);
+    }
+    #wikiArticle{
+      padding:28px;
+      overflow:auto;
+      max-width:1000px;
+    }
+    .wiki-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    #wikiArticle h1{
+      margin:0 0 8px;
+      color:var(--green);
+      font-size:clamp(28px, 4vw, 46px);
+      letter-spacing:.05em;
+      text-transform:uppercase;
+    }
+    #wikiArticle .wiki-kicker{
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      font-size:12px;
+    }
+    .wiki-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .wiki-card{
+      background:rgba(18,25,20,.92);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px;
+      margin:0 0 14px;
+      box-shadow:0 14px 36px rgba(0,0,0,.22);
+    }
+    .wiki-card h3{
+      margin:0 0 8px;
+      color:var(--green);
+      font-size:18px;
+    }
+    .wiki-card p{
+      margin:0;
+      color:var(--text);
+      line-height:1.55;
+      white-space:pre-wrap;
+    }
+    .wiki-editor{
+      display:none;
+      gap:12px;
+    }
+    .wiki-editor.show{
+      display:grid;
+    }
+    .wiki-editor input,
+    .wiki-editor textarea{
+      width:100%;
+      background:#0b0f0d;
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 11px;
+      font:inherit;
+    }
+    .wiki-editor textarea{
+      min-height:360px;
+      resize:vertical;
+      line-height:1.45;
+    }
+    .wiki-readonly{ display:block; }
+    .wiki-readonly.hide{ display:none; }
+    .wiki-note{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:8px;
+    }
+    @media (max-width:800px){
+      #wikiReader.show{
+        grid-template-columns:1fr;
+        grid-template-rows:auto 1fr;
+      }
+      #wikiNav{
+        border-right:0;
+        border-bottom:1px solid var(--border);
+        max-height:240px;
+      }
+      #wikiArticle{
+        padding:18px;
+      }
+      .wiki-top{
+        flex-direction:column;
+      }
+      .wiki-actions{
+        justify-content:flex-start;
+      }
+    }
+
     .modal{
       position:fixed; inset:0; z-index:2000;
       display:none; place-items:center;
@@ -717,11 +972,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v2.7.2</div>
+    <div id="loginScreenVersion">v2.9</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.7.2</span></p>
+      <p class="login-version">Version <span id="loginVersion">v2.9</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -741,8 +996,53 @@
           <strong>Favors</strong>
           <span>Favor locations, star ratings, rewards, verification status, and notes.</span>
         </button>
+        <button id="openWiki" class="home-option" type="button">
+          <strong>Wiki</strong>
+          <span>Server reference hub. Starts with drugs and can be edited from the site.</span>
+        </button>
       </div>
     </div>
+  </div>
+
+  <div id="wikiScreen">
+    <section id="wikiModuleMenu" class="show">
+      <div class="wiki-module-shell">
+        <h1>Wiki</h1>
+        <p>Select a knowledge module.</p>
+        <div class="wiki-module-grid">
+          <button id="openWikiDrugs" class="wiki-module-card" style="--module-image:url('assets/wiki/drugs.png')" type="button">
+            <div class="wiki-module-content">
+              <strong>Drugs</strong>
+              <span>Drug types, processing, values, risks, routes, and notes.</span>
+            </div>
+          </button>
+          <button id="openWikiRobberies" class="wiki-module-card" style="--module-image:linear-gradient(135deg, rgba(57,211,83,.16), rgba(0,0,0,.3))" type="button">
+            <div class="wiki-module-content">
+              <strong>Robberies</strong>
+              <span>Coming soon. Robbery types, tools, cooldowns, risks, and job notes.</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="wikiReader">
+      <nav id="wikiNav">
+        <button id="wikiBackToModules" class="btn wiki-back" type="button">← Wiki Modules</button>
+        <h2 id="wikiModuleTitle">Drugs</h2>
+        <div class="wiki-section-title">Drug Types</div>
+        <button class="wiki-link active" data-wiki-page="drugs-overview" type="button">Overview</button>
+        <button class="wiki-link" data-wiki-page="weed" type="button">Weed</button>
+        <button class="wiki-link" data-wiki-page="cocaine" type="button">Cocaine</button>
+        <button class="wiki-link" data-wiki-page="meth" type="button">Meth</button>
+        <button class="wiki-link" data-wiki-page="heroin" type="button">Heroin</button>
+        <button class="wiki-link" data-wiki-page="lsd" type="button">LSD</button>
+        <button class="wiki-link" data-wiki-page="mushrooms" type="button">Mushrooms</button>
+        <button class="wiki-link" data-wiki-page="ketamine" type="button">Ketamine</button>
+        <button class="wiki-link" data-wiki-page="moonshine" type="button">Moonshine</button>
+      </nav>
+      <main id="wikiArticle"></main>
+    </section>
   </div>
 
   <div id="topbar">
@@ -793,7 +1093,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.7.2</div>
+  <div id="version">v2.9</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -871,17 +1171,18 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getAuth, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import {
-      getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp
+      getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.7.2";
+    const APP_VERSION = "v2.9";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
     const FAVOR_COLLECTION = "nomad_favors";
+    const WIKI_COLLECTION = "nomad_wiki";
     const MAP_IMAGE_CANDIDATES = [
       "assets/maps/map.jpg",
       "assets/maps/map.jpeg",
@@ -947,6 +1248,14 @@
     const homeScreen = $("homeScreen");
     const openLosSantosMap = $("openLosSantosMap");
     const openFavorsMap = $("openFavorsMap");
+    const openWiki = $("openWiki");
+    const wikiScreen = $("wikiScreen");
+    const wikiModuleMenu = $("wikiModuleMenu");
+    const wikiReader = $("wikiReader");
+    const openWikiDrugs = $("openWikiDrugs");
+    const openWikiRobberies = $("openWikiRobberies");
+    const wikiBackToModules = $("wikiBackToModules");
+    const wikiArticle = $("wikiArticle");
     const passwordInput = $("passwordInput");
     const loginBtn = $("loginBtn");
     const loginMsg = $("loginMsg");
@@ -1003,6 +1312,178 @@
     function starsText(value){
       const count = Math.max(1, Math.min(5, Number(value) || 1));
       return "★".repeat(count) + "☆".repeat(5 - count);
+    }
+
+    const WIKI_DEFAULTS = {
+      "drugs-overview": {
+        title: "Drugs",
+        kicker: "Server Wiki / Overview",
+        body: "Purpose\nThis section is for server-specific drug information, routes, processing notes, risk, rewards, and tips.\n\nDrug Types\nWeed, Cocaine, Meth, Heroin, LSD, Mushrooms, Ketamine, and Moonshine.\n\nTemplate\nEach page is meant to stay consistent: overview, how to obtain, processing, value, risk, and notes."
+      },
+      weed: { title: "Weed", kicker: "Drugs / Weed", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      cocaine: { title: "Cocaine", kicker: "Drugs / Cocaine", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      meth: { title: "Meth", kicker: "Drugs / Meth", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      heroin: { title: "Heroin", kicker: "Drugs / Heroin", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      lsd: { title: "LSD", kicker: "Drugs / LSD", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      mushrooms: { title: "Mushrooms", kicker: "Drugs / Mushrooms", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      ketamine: { title: "Ketamine", kicker: "Drugs / Ketamine", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+      moonshine: { title: "Moonshine", kicker: "Drugs / Moonshine", body: "Overview\nPlaceholder.\n\nHow to Obtain\nPlaceholder.\n\nProcessing\nPlaceholder.\n\nRewards / Value\nPlaceholder.\n\nRisk\nPlaceholder.\n\nNotes\nPlaceholder." },
+    };
+
+    let currentWikiPageId = "drugs-overview";
+    let currentWikiPageData = null;
+    let wikiEditing = false;
+    let currentWikiModule = null;
+
+    function showWikiModules(){
+      currentWikiModule = null;
+      wikiEditing = false;
+      wikiModuleMenu.classList.add("show");
+      wikiReader.classList.remove("show");
+    }
+
+    function openWikiModule(moduleId){
+      currentWikiModule = moduleId;
+      wikiModuleMenu.classList.remove("show");
+      wikiReader.classList.add("show");
+
+      if (moduleId === "drugs") {
+        currentWikiPageId = "drugs-overview";
+        loadWikiPage(currentWikiPageId);
+      } else if (moduleId === "robberies") {
+        alert("Robberies module is coming soon.");
+        showWikiModules();
+      }
+    }
+
+    function bodyToCards(body){
+      const parts = String(body || "").split(/\n{2,}/).filter(Boolean);
+      if (!parts.length) {
+        return `<section class="wiki-card"><p>No content yet.</p></section>`;
+      }
+
+      return parts.map(part => {
+        const lines = part.split("\n");
+        const title = lines.length > 1 ? lines[0] : "Notes";
+        const bodyText = lines.length > 1 ? lines.slice(1).join("\n") : lines[0];
+        return `
+          <section class="wiki-card">
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(bodyText)}</p>
+          </section>
+        `;
+      }).join("");
+    }
+
+    async function loadWikiPage(pageId){
+      currentWikiPageId = pageId;
+      wikiEditing = false;
+
+      const fallback = WIKI_DEFAULTS[pageId] || WIKI_DEFAULTS["drugs-overview"];
+      let pageData = { ...fallback };
+
+      try {
+        const snap = await getDoc(doc(db, WIKI_COLLECTION, pageId));
+        if (snap.exists()) {
+          pageData = { ...pageData, ...snap.data() };
+        }
+      } catch (error) {
+        console.error(error);
+      }
+
+      currentWikiPageData = pageData;
+      renderWikiPage();
+    }
+
+    function renderWikiPage(){
+      const data = currentWikiPageData || WIKI_DEFAULTS[currentWikiPageId] || WIKI_DEFAULTS["drugs-overview"];
+      const editButtons = editingUnlocked
+        ? `<button id="wikiEditBtn" class="btn">Edit Page</button>`
+        : `<span class="wiki-note">Unlock editing in Settings to edit wiki pages.</span>`;
+
+      wikiArticle.innerHTML = `
+        <div class="wiki-top">
+          <div>
+            <h1>${escapeHtml(data.title)}</h1>
+            <div class="wiki-kicker">${escapeHtml(data.kicker || "")}</div>
+          </div>
+          <div class="wiki-actions">
+            ${editButtons}
+          </div>
+        </div>
+
+        <div id="wikiReadonly" class="wiki-readonly ${wikiEditing ? "hide" : ""}">
+          ${bodyToCards(data.body)}
+        </div>
+
+        <div id="wikiEditor" class="wiki-editor ${wikiEditing ? "show" : ""}">
+          <label class="field">
+            <span>Title</span>
+            <input id="wikiTitleInput" type="text" value="${escapeHtml(data.title)}" />
+          </label>
+          <label class="field">
+            <span>Subtitle / Path</span>
+            <input id="wikiKickerInput" type="text" value="${escapeHtml(data.kicker || "")}" />
+          </label>
+          <label class="field">
+            <span>Page Content</span>
+            <textarea id="wikiBodyInput">${escapeHtml(data.body || "")}</textarea>
+          </label>
+          <div class="wiki-actions" style="justify-content:flex-start">
+            <button id="wikiSaveBtn" class="btn primary">Save Page</button>
+            <button id="wikiCancelBtn" class="btn ghost">Cancel</button>
+          </div>
+          <div class="wiki-note">Tip: Use blank lines between sections. First line becomes the green section header.</div>
+        </div>
+      `;
+
+      document.querySelectorAll(".wiki-link").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.wikiPage === currentWikiPageId);
+      });
+
+      const editBtn = $("wikiEditBtn");
+      if (editBtn) {
+        editBtn.addEventListener("click", () => {
+          wikiEditing = true;
+          renderWikiPage();
+        });
+      }
+
+      const cancelBtn = $("wikiCancelBtn");
+      if (cancelBtn) {
+        cancelBtn.addEventListener("click", () => {
+          wikiEditing = false;
+          renderWikiPage();
+        });
+      }
+
+      const saveBtn = $("wikiSaveBtn");
+      if (saveBtn) {
+        saveBtn.addEventListener("click", saveWikiPage);
+      }
+    }
+
+    async function saveWikiPage(){
+      if (!editingUnlocked) {
+        alert("Unlock editing first.");
+        return;
+      }
+
+      const updated = {
+        title: $("wikiTitleInput").value.trim() || currentWikiPageData.title,
+        kicker: $("wikiKickerInput").value.trim(),
+        body: $("wikiBodyInput").value,
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        await setDoc(doc(db, WIKI_COLLECTION, currentWikiPageId), updated, { merge:true });
+        currentWikiPageData = { ...currentWikiPageData, ...updated };
+        wikiEditing = false;
+        renderWikiPage();
+      } catch (error) {
+        alert("Save failed: " + error.message);
+      }
     }
 
     function typeConfig(type){
@@ -1176,6 +1657,7 @@
       }
 
       homeScreen.classList.remove("show");
+      document.body.classList.remove("module-wiki");
       if (loadingOverlay) loadingOverlay.classList.add("show");
       startFirestoreListener();
       applyLayerVisibility();
@@ -1183,6 +1665,25 @@
       if (map) {
         setTimeout(() => map.invalidateSize(), 100);
       }
+    }
+
+    function selectWikiView(){
+      currentView = "wiki";
+
+      if (unsubscribeMarkers) {
+        unsubscribeMarkers();
+        unsubscribeMarkers = null;
+      }
+
+      clearAllMarkers();
+      closeModal();
+      if (loadingOverlay) loadingOverlay.classList.remove("show");
+
+      homeScreen.classList.remove("show");
+      document.body.classList.add("module-wiki");
+      setHint("Wiki");
+      status.textContent = "Wiki";
+      showWikiModules();
     }
 
     function returnToMainMenu(){
@@ -1197,6 +1698,8 @@
       closeModal();
       if (loadingOverlay) loadingOverlay.classList.remove("show");
       currentView = null;
+      wikiEditing = false;
+      document.body.classList.remove("module-wiki");
       homeScreen.classList.add("show");
       setHint("Select a module");
       status.textContent = "Ready";
@@ -1508,7 +2011,7 @@
               const btn = document.createElement("button");
               btn.type = "button";
               btn.className = "marker-jump";
-              btn.textContent = m.name || "Unnamed Marker";
+              btn.textContent = isFavorType(m.type) ? `${starsText(m.stars)} ${m.name || "Unnamed Favor"}` : (m.name || "Unnamed Marker");
               btn.addEventListener("click", () => jumpToMarker(m.id));
               list.appendChild(btn);
             });
@@ -1651,10 +2154,12 @@
     async function lock(){
       unlocked = false;
       editingUnlocked = false;
+      document.body.classList.remove("editing-unlocked");
       addMode.checked = false;
       editMode.checked = false;
       editControls.classList.remove("show");
       applyEditMode();
+      if (currentView === "wiki") renderWikiPage();
       try { await signOut(auth); } catch {}
       if (loadingOverlay) loadingOverlay.classList.remove("show");
       if (unsubscribeMarkers) {
@@ -1663,6 +2168,8 @@
       }
       clearAllMarkers();
       homeScreen.classList.remove("show");
+      document.body.classList.remove("module-wiki");
+      wikiEditing = false;
       currentView = null;
       loginGate.style.display = "block";
       passwordInput.value = "";
@@ -1670,9 +2177,17 @@
       setHint("Locked");
     }
 
+    document.querySelectorAll(".wiki-link").forEach(btn => {
+      btn.addEventListener("click", () => loadWikiPage(btn.dataset.wikiPage));
+    });
+
     loginBtn.addEventListener("click", unlock);
     openLosSantosMap.addEventListener("click", () => selectNetworkView("map"));
     openFavorsMap.addEventListener("click", () => selectNetworkView("favors"));
+    openWiki.addEventListener("click", selectWikiView);
+    openWikiDrugs.addEventListener("click", () => openWikiModule("drugs"));
+    openWikiRobberies.addEventListener("click", () => openWikiModule("robberies"));
+    wikiBackToModules.addEventListener("click", showWikiModules);
     passwordInput.addEventListener("keydown", (e) => { if (e.key === "Enter") unlock(); });
     addMode.addEventListener("change", () => {
       if (addMode.checked) editMode.checked = false;
@@ -1713,6 +2228,7 @@
       }
 
       editingUnlocked = true;
+      document.body.classList.add("editing-unlocked");
       editControls.classList.add("show");
       settingsMenu.classList.remove("show");
       setHint("Editing unlocked");
