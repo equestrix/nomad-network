@@ -736,6 +736,138 @@
       }
     }
 
+
+    #minigamesScreen{
+      position:fixed;
+      inset:64px 0 0 0;
+      z-index:1150;
+      display:none;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(57,211,83,.08), transparent 28%),
+        linear-gradient(180deg, rgba(5,8,6,.98), rgba(7,10,8,.99));
+      color:var(--text);
+      overflow:hidden;
+    }
+    body.module-minigames #minigamesScreen{
+      display:grid;
+      grid-template-columns:300px 1fr;
+    }
+    body.module-minigames #markerSidebar,
+    body.module-minigames #sidebarOpenButton,
+    body.module-minigames #map,
+    body.module-minigames #loadingOverlay,
+    body.module-minigames #status{
+      display:none !important;
+    }
+    #minigameNav{
+      border-right:1px solid var(--border);
+      background:rgba(11,15,13,.96);
+      padding:14px;
+      overflow:auto;
+    }
+    #minigameNav h2{
+      margin:0 0 10px;
+      color:var(--green);
+      font-size:16px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .minigame-link{
+      width:100%;
+      display:block;
+      text-align:left;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--text);
+      padding:10px;
+      border-radius:9px;
+      cursor:pointer;
+      font-weight:800;
+      margin-bottom:5px;
+    }
+    .minigame-link:hover,
+    .minigame-link.active{
+      border-color:var(--green2);
+      background:var(--panel2);
+      color:var(--green);
+    }
+    #minigamePanel{
+      display:grid;
+      grid-template-rows:auto 1fr;
+      min-width:0;
+      min-height:0;
+    }
+    .minigame-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--border);
+      background:rgba(11,15,13,.9);
+    }
+    .minigame-header h1{
+      margin:0;
+      color:var(--green);
+      font-size:20px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .minigame-header p{
+      margin:3px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .minigame-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    #minigameFrameWrap{
+      position:relative;
+      min-height:0;
+      background:#050705;
+    }
+    #minigameFrame{
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+      background:#050705;
+    }
+    .minigame-note{
+      position:absolute;
+      left:12px;
+      bottom:12px;
+      z-index:2;
+      background:rgba(11,15,13,.84);
+      border:1px solid var(--border);
+      color:var(--muted);
+      padding:7px 9px;
+      border-radius:999px;
+      font-size:12px;
+      pointer-events:none;
+    }
+    @media (max-width:850px){
+      body.module-minigames #minigamesScreen{
+        grid-template-columns:1fr;
+        grid-template-rows:auto 1fr;
+      }
+      #minigameNav{
+        border-right:0;
+        border-bottom:1px solid var(--border);
+        max-height:180px;
+      }
+      .minigame-header{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .minigame-actions{
+        justify-content:flex-start;
+      }
+    }
+
     .modal{
       position:fixed; inset:0; z-index:2000;
       display:none; place-items:center;
@@ -972,11 +1104,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v2.9</div>
+    <div id="loginScreenVersion">v3.0</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v2.9</span></p>
+      <p class="login-version">Version <span id="loginVersion">v3.0</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -999,6 +1131,10 @@
         <button id="openWiki" class="home-option" type="button">
           <strong>Wiki</strong>
           <span>Server reference hub. Starts with drugs and can be edited from the site.</span>
+        </button>
+        <button id="openMinigames" class="home-option" type="button">
+          <strong>Minigames</strong>
+          <span>Practice city minigames from inside Nomad Network.</span>
         </button>
       </div>
     </div>
@@ -1042,6 +1178,31 @@
         <button class="wiki-link" data-wiki-page="moonshine" type="button">Moonshine</button>
       </nav>
       <main id="wikiArticle"></main>
+    </section>
+  </div>
+
+  <div id="minigamesScreen">
+    <nav id="minigameNav">
+      <h2>Minigames</h2>
+      <button id="openMethMinigame" class="minigame-link active" type="button">Meth Cook</button>
+    </nav>
+
+    <section id="minigamePanel">
+      <header class="minigame-header">
+        <div>
+          <h1 id="minigameTitle">Meth Cook</h1>
+          <p id="minigameSubtitle">Practice the meth cooking minigame. Click inside the game window before using keys.</p>
+        </div>
+        <div class="minigame-actions">
+          <button id="reloadMinigameBtn" class="btn" type="button">Reload</button>
+          <a id="openMinigameNewTab" class="btn ghost" href="minigames/meth/" target="_blank" rel="noopener">Open New Tab</a>
+        </div>
+      </header>
+
+      <div id="minigameFrameWrap">
+        <iframe id="minigameFrame" title="Meth Cook Minigame" src="minigames/meth/"></iframe>
+        <div class="minigame-note">Click inside the minigame, then press E to start.</div>
+      </div>
     </section>
   </div>
 
@@ -1093,7 +1254,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v2.9</div>
+  <div id="version">v3.0</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -1177,7 +1338,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v2.9";
+    const APP_VERSION = "v3.0";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -1189,6 +1350,7 @@
       "assets/maps/map.png",
       "map.jpg"
     ];
+    const METH_MINIGAME_PATH = "minigames/meth/";
 
     // PASTE YOUR NEW NOMAD NETWORK FIREBASE CONFIG HERE.
     // Firebase Console → Project settings → Your apps → Web app config
@@ -1249,6 +1411,11 @@
     const openLosSantosMap = $("openLosSantosMap");
     const openFavorsMap = $("openFavorsMap");
     const openWiki = $("openWiki");
+    const openMinigames = $("openMinigames");
+    const minigameFrame = $("minigameFrame");
+    const reloadMinigameBtn = $("reloadMinigameBtn");
+    const openMethMinigame = $("openMethMinigame");
+    const openMinigameNewTab = $("openMinigameNewTab");
     const wikiScreen = $("wikiScreen");
     const wikiModuleMenu = $("wikiModuleMenu");
     const wikiReader = $("wikiReader");
@@ -1658,6 +1825,7 @@
 
       homeScreen.classList.remove("show");
       document.body.classList.remove("module-wiki");
+      document.body.classList.remove("module-minigames");
       if (loadingOverlay) loadingOverlay.classList.add("show");
       startFirestoreListener();
       applyLayerVisibility();
@@ -1665,6 +1833,28 @@
       if (map) {
         setTimeout(() => map.invalidateSize(), 100);
       }
+    }
+
+    function selectMinigamesView(){
+      currentView = "minigames";
+
+      if (unsubscribeMarkers) {
+        unsubscribeMarkers();
+        unsubscribeMarkers = null;
+      }
+
+      clearAllMarkers();
+      closeModal();
+      if (loadingOverlay) loadingOverlay.classList.remove("show");
+
+      homeScreen.classList.remove("show");
+      document.body.classList.remove("module-wiki");
+      document.body.classList.add("module-minigames");
+      setHint("Minigames");
+      status.textContent = "Minigames";
+
+      minigameFrame.src = METH_MINIGAME_PATH;
+      openMinigameNewTab.href = METH_MINIGAME_PATH;
     }
 
     function selectWikiView(){
@@ -1680,6 +1870,7 @@
       if (loadingOverlay) loadingOverlay.classList.remove("show");
 
       homeScreen.classList.remove("show");
+      document.body.classList.remove("module-minigames");
       document.body.classList.add("module-wiki");
       setHint("Wiki");
       status.textContent = "Wiki";
@@ -1700,6 +1891,7 @@
       currentView = null;
       wikiEditing = false;
       document.body.classList.remove("module-wiki");
+      document.body.classList.remove("module-minigames");
       homeScreen.classList.add("show");
       setHint("Select a module");
       status.textContent = "Ready";
@@ -2169,6 +2361,7 @@
       clearAllMarkers();
       homeScreen.classList.remove("show");
       document.body.classList.remove("module-wiki");
+      document.body.classList.remove("module-minigames");
       wikiEditing = false;
       currentView = null;
       loginGate.style.display = "block";
@@ -2185,6 +2378,14 @@
     openLosSantosMap.addEventListener("click", () => selectNetworkView("map"));
     openFavorsMap.addEventListener("click", () => selectNetworkView("favors"));
     openWiki.addEventListener("click", selectWikiView);
+    openMinigames.addEventListener("click", selectMinigamesView);
+    openMethMinigame.addEventListener("click", () => {
+      minigameFrame.src = METH_MINIGAME_PATH;
+      openMinigameNewTab.href = METH_MINIGAME_PATH;
+    });
+    reloadMinigameBtn.addEventListener("click", () => {
+      minigameFrame.src = minigameFrame.src;
+    });
     openWikiDrugs.addEventListener("click", () => openWikiModule("drugs"));
     openWikiRobberies.addEventListener("click", () => openWikiModule("robberies"));
     wikiBackToModules.addEventListener("click", showWikiModules);
