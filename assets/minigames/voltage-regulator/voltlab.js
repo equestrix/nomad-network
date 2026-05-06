@@ -164,7 +164,7 @@
             {
                 var code = e.keyCode;
                 switch (code) {
-		case 37: 
+		case 87: 
                     key_switch_sound.play();
                     this.left_pins[this.focusKey].focus = -1;
                     this.up_control(); 
@@ -176,7 +176,7 @@
                     this.left_pins[this.focusKey].left_control(); 
                     this.draw(); 
                     break; //Up key
-                case 39: 
+                case 83: 
 					key_switch_sound.play();
                     this.left_pins[this.focusKey].focus = -1; 
                     this.down_control(); 
