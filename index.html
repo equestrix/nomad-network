@@ -1105,11 +1105,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v3.1.4</div>
+    <div id="loginScreenVersion">v3.1.5</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v3.1.4</span></p>
+      <p class="login-version">Version <span id="loginVersion">v3.1.5</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -1241,6 +1241,7 @@
     <p class="sidebar-note">Turn marker types on/off. Click a named marker to jump to it.</p>
     <div class="sidebar-controls">
       <label class="sidebar-control"><input id="hideUnverified" type="checkbox"> Hide unverified markers</label>
+      <label class="sidebar-control"><input id="hideVerified" type="checkbox"> Hide verified markers</label>
     </div>
     <div id="sidebarTypes"></div>
   </aside>
@@ -1256,7 +1257,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v3.1.4</div>
+  <div id="version">v3.1.5</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -1340,7 +1341,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v3.1.4";
+    const APP_VERSION = "v3.1.5";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -1413,6 +1414,7 @@
     const visibleTypes = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, true]));
     const expandedTypes = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, false]));
     let hideUnverifiedOnly = false;
+    let hideVerifiedOnly = false;
     let currentView = null;
     let currentCollectionName = MARKER_COLLECTION;
     let unsubscribeMarkers = null;
@@ -1450,6 +1452,7 @@
     const editControls = $("editControls");
     const sidebarTypes = $("sidebarTypes");
     const hideUnverified = $("hideUnverified");
+    const hideVerified = $("hideVerified");
     const sidebarToggle = $("sidebarToggle");
     const sidebarOpenButton = $("sidebarOpenButton");
     const loadingOverlay = $("loadingOverlay");
@@ -2110,7 +2113,9 @@
     }
 
     function shouldShowMarker(data){
-      return !hideUnverifiedOnly || !!data.verified;
+      if (hideUnverifiedOnly && !data.verified) return false;
+      if (hideVerifiedOnly && !!data.verified) return false;
+      return true;
     }
 
     function syncMarkerLayer(id){
@@ -2166,7 +2171,7 @@
       currentMarkerTypes().forEach(t => {
         const entries = Array.from(markerData.values())
           .filter(m => typeConfig(m.type).id === t.id)
-          .filter(m => !hideUnverifiedOnly || !!m.verified)
+          .filter(m => shouldShowMarker(m))
           .sort((a,b) => a.name.localeCompare(b.name));
 
         const row = document.createElement("section");
@@ -2435,6 +2440,11 @@
     });
     hideUnverified.addEventListener("change", () => {
       hideUnverifiedOnly = hideUnverified.checked;
+      applyLayerVisibility();
+      updateSidebar();
+    });
+    hideVerified.addEventListener("change", () => {
+      hideVerifiedOnly = hideVerified.checked;
       applyLayerVisibility();
       updateSidebar();
     });
