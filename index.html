@@ -1105,11 +1105,11 @@
 </head>
 <body>
   <div id="loginGate">
-    <div id="loginScreenVersion">v3.1.5</div>
+    <div id="loginScreenVersion">v3.1.6</div>
     <div id="loginCard">
       <h1>NOMAD NETWORK</h1>
       <p>Enter the password to access the network.</p>
-      <p class="login-version">Version <span id="loginVersion">v3.1.5</span></p>
+      <p class="login-version">Version <span id="loginVersion">v3.1.6</span></p>
       <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" class="btn primary">Unlock Network</button>
       <div id="loginMsg"></div>
@@ -1242,6 +1242,7 @@
     <div class="sidebar-controls">
       <label class="sidebar-control"><input id="hideUnverified" type="checkbox"> Hide unverified markers</label>
       <label class="sidebar-control"><input id="hideVerified" type="checkbox"> Hide verified markers</label>
+      <label class="sidebar-control"><input id="hideNoRep" type="checkbox"> Hide favors without rep</label>
     </div>
     <div id="sidebarTypes"></div>
   </aside>
@@ -1257,7 +1258,7 @@
     </div>
   </div>
   <div id="status">Loading map...</div>
-  <div id="version">v3.1.5</div>
+  <div id="version">v3.1.6</div>
 
   <div id="markerModal" class="modal" aria-hidden="true">
     <div class="card">
@@ -1310,6 +1311,9 @@
               <div id="favorStarsPreview" class="stars-preview">★☆☆☆☆</div>
             </div>
           </div>
+          <label class="check" style="align-self:start">
+            <input id="favorGivesRep" type="checkbox"> Gives rep
+          </label>
           <label class="field">
             <span>Rewards</span>
             <textarea id="favorRewards" placeholder="Example: $1,499, Cocaine Bag, Rep"></textarea>
@@ -1341,7 +1345,7 @@
     // =========================
     // CHANGE THESE SETTINGS
     // =========================
-    const APP_VERSION = "v3.1.5";
+    const APP_VERSION = "v3.1.6";
     const NETWORK_PASSWORD = "1";
     const EDIT_PASSWORD = "1";
     const MARKER_COLLECTION = "nomad_markers";
@@ -1415,6 +1419,7 @@
     const expandedTypes = Object.fromEntries(ALL_MARKER_TYPES.map(t => [t.id, false]));
     let hideUnverifiedOnly = false;
     let hideVerifiedOnly = false;
+    let hideNoRepOnly = false;
     let currentView = null;
     let currentCollectionName = MARKER_COLLECTION;
     let unsubscribeMarkers = null;
@@ -1453,6 +1458,7 @@
     const sidebarTypes = $("sidebarTypes");
     const hideUnverified = $("hideUnverified");
     const hideVerified = $("hideVerified");
+    const hideNoRep = $("hideNoRep");
     const sidebarToggle = $("sidebarToggle");
     const sidebarOpenButton = $("sidebarOpenButton");
     const loadingOverlay = $("loadingOverlay");
@@ -1479,6 +1485,7 @@
     const favorStars = $("favorStars");
     const favorStarsPreview = $("favorStarsPreview");
     const favorRewards = $("favorRewards");
+    const favorGivesRep = $("favorGivesRep");
     const deleteBtn = $("deleteBtn");
     const cancelBtn = $("cancelBtn");
     const saveBtn = $("saveBtn");
@@ -1965,6 +1972,7 @@
             verified: !!v.verified,
             stars: Number(v.stars || 1),
             rewards: v.rewards || "",
+            givesRep: !!v.givesRep,
           };
 
           if (!Number.isFinite(data.x) || !Number.isFinite(data.y)) return;
@@ -2053,11 +2061,13 @@
 
       if (isFavorType(data.type)) {
         const rewards = data.rewards ? `<p class="reward-line"><strong>Rewards:</strong><br>${escapeHtml(data.rewards).replace(/\n/g, "<br>")}</p>` : "";
+        const repLine = `<p><strong>Rep:</strong> ${data.givesRep ? "Gives Rep" : "No Rep"}</p>`;
         return `
           <div class="popup">
             <h3>${escapeHtml(data.name || "Favor")}</h3>
             <p class="favor-stars">${starsText(data.stars)}</p>
             ${status}
+            ${repLine}
             ${rewards}
             ${notes}
             ${actions}
@@ -2115,6 +2125,7 @@
     function shouldShowMarker(data){
       if (hideUnverifiedOnly && !data.verified) return false;
       if (hideVerifiedOnly && !!data.verified) return false;
+      if (currentView === "favors" && hideNoRepOnly && !data.givesRep) return false;
       return true;
     }
 
@@ -2267,6 +2278,7 @@
       markerVerified.checked = false;
       favorStars.value = "1";
       favorRewards.value = "";
+      favorGivesRep.checked = false;
       markerNotes.value = "";
       updateFavorFields();
       deleteBtn.style.display = "none";
@@ -2287,6 +2299,7 @@
       markerVerified.checked = !!data.verified;
       favorStars.value = String(data.stars || 1);
       favorRewards.value = data.rewards || "";
+      favorGivesRep.checked = !!data.givesRep;
       markerNotes.value = data.notes || "";
       updateFavorFields();
       deleteBtn.style.display = "";
@@ -2308,6 +2321,7 @@
       const verified = markerVerified.checked;
       const stars = Number(favorStars.value || 1);
       const rewards = favorRewards.value.trim();
+      const givesRep = isFavorType(type) ? favorGivesRep.checked : false;
 
       if (!name && nameRequiredFor(type)) {
         alert("Name is required for garages and misc markers.");
@@ -2320,13 +2334,13 @@
 
       if (editingId) {
         await updateDoc(doc(db, currentCollectionName, editingId), {
-          name, type, notes, lastChecked, verified, stars, rewards,
+          name, type, notes, lastChecked, verified, stars, rewards, givesRep,
           updatedAt: serverTimestamp()
         });
       } else {
         if (!pendingLatLng) return;
         await addDoc(markersCol, {
-          name, type, notes, lastChecked, verified, stars, rewards,
+          name, type, notes, lastChecked, verified, stars, rewards, givesRep,
           x: pendingLatLng.lng,
           y: pendingLatLng.lat,
           createdAt: serverTimestamp(),
@@ -2349,7 +2363,7 @@
     function exportMarkers(){
       const arr = Array.from(markerData.values())
         .sort((a,b) => a.name.localeCompare(b.name))
-        .map(({id, name, type, x, y, notes, lastChecked, verified, stars, rewards}) => ({id, name, type, x, y, notes, lastChecked, verified, stars, rewards}));
+        .map(({id, name, type, x, y, notes, lastChecked, verified, stars, rewards, givesRep}) => ({id, name, type, x, y, notes, lastChecked, verified, stars, rewards, givesRep}));
 
       const blob = new Blob([JSON.stringify(arr, null, 2)], { type:"application/json" });
       const url = URL.createObjectURL(blob);
@@ -2445,6 +2459,11 @@
     });
     hideVerified.addEventListener("change", () => {
       hideVerifiedOnly = hideVerified.checked;
+      applyLayerVisibility();
+      updateSidebar();
+    });
+    hideNoRep.addEventListener("change", () => {
+      hideNoRepOnly = hideNoRep.checked;
       applyLayerVisibility();
       updateSidebar();
     });
